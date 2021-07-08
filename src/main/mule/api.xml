@@ -114,6 +114,13 @@
             </on-error-propagate>
         </error-handler>
     </flow>
+     <flow name="get:\apireuse-metrics:api-config">
+        <logger level="INFO" message="get:\apireuse-metrics:api-config" />
+    <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="d97c2a60-09ce-4bc9-b6ed-a5ee0e68d867" name="common-set-auth-vars-from-headers" />
+    <flow-ref doc:name="Flow Reference" doc:id="2e0a7e9b-4fea-41f7-b8c4-77ac1f717535" name="core-platform-Login-flow"/>
+    <flow-ref doc:name="Flow Reference" doc:id="49dc8388-c52e-4a20-8c2c-b1fee8f5ec00" name="reuseMetrics-flow"/>
+    </flow>
+
     <flow name="get:\platform-metrics:api-config">
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="a99d508d-5bd1-4627-88d1-fec6fb4ed7cf" name="common-set-auth-vars-from-headers" />
         <flow-ref doc:name="Set Aggregator Details From Query Params Flow Reference" doc:id="526a1967-37bb-499f-a47d-9c469bb3df26" name="common-set-aggregator-vars-from-query-params"/>
