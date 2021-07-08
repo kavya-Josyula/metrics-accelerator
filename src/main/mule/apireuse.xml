@@ -4,25 +4,25 @@
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-  <flow name="core-platform-Login-flow" doc:id="fa7fb2e8-eeb1-4225-8bfb-51063d491e24" >
-    <ee:transform doc:name="Set Date and Error Variables" doc:id="d62b4061-81e0-43f0-aee6-8f2657ee5728">
+  <flow name="core-platform-Login-flow" doc:id="48e4a132-7989-4e10-a6b4-e0e12cdd6277" >
+    <ee:transform doc:name="Set Date and Error Variables" doc:id="1fff66b1-19ee-4027-b6f4-7a90d37c1b31">
       <ee:message />
       <ee:variables>
         <ee:set-variable resource="dw/aggregation/set-date-var.dwl" variableName="date" />
         <ee:set-variable resource="dw/aggregation/set-errors-var.dwl" variableName="errors" />
       </ee:variables>
     </ee:transform>
-    <flow-ref doc:name="Get Token Flow Reference" doc:id="0f521522-964c-4a6e-a067-ae609523ea6f" name="api-call-coreservices-login-flow" target="token" targetValue="payload.access_token" />
-    <flow-ref doc:name="CoreServices - Get Organizations" doc:id="70fb23ac-8237-4120-bd21-ef3bdb397442" name="api-call-coreservices-organizations-flow" />
-    <ee:transform doc:name="Build Organizations including master org" doc:id="fcaa1c4e-c18e-4f5b-a6df-60effb5ce84b">
+    <flow-ref doc:name="Get Token Flow Reference" doc:id="91b7fc06-9130-44c4-90c0-c57f9179b58d" name="api-call-coreservices-login-flow" target="token" targetValue="payload.access_token" />
+    <flow-ref doc:name="CoreServices - Get Organizations" doc:id="0642cbd1-a005-4ab7-853c-3be54da81f20" name="api-call-coreservices-organizations-flow" />
+    <ee:transform doc:name="Build Organizations including master org" doc:id="2f11e0ef-8dea-4894-b600-1c3ec203216c">
       <ee:message>
         <ee:set-payload resource="dw/aggregation/build-orgs-aggregation.dwl" />
       </ee:message>
     </ee:transform>
   </flow>
-  <flow name="reuseMetrics-flow" doc:id="9c4391b6-2124-4c04-9aa3-ba2cebcac24f" >
-    <parallel-foreach doc:name="For Each" doc:id="8be93dc7-fa7b-4949-94c3-8c6d99e375d5" collection="#[payload]">
-      <ee:transform doc:name="Set Org Id, Name and Entitlements Vars" doc:id="f51d58e6-7036-47a3-bf73-52e4a91f95d7">
+  <flow name="reuseMetrics-flow" doc:id="30b87a93-1bab-431a-939d-60c013261442" >
+    <parallel-foreach doc:name="For Each" doc:id="d8ebc470-6bec-4531-81a0-fc27ba884df2" collection="#[payload]">
+      <ee:transform doc:name="Set Org Id, Name and Entitlements Vars" doc:id="63201132-cfdf-41e1-bc34-6c8248e53a0b">
         <ee:message />
         <ee:variables>
           <ee:set-variable resource="dw/aggregation/set-org-id-var.dwl" variableName="orgId" />
@@ -30,12 +30,12 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
           <ee:set-variable resource="dw/aggregation/set-entitlements-var.dwl" variableName="entitlements" />
         </ee:variables>
       </ee:transform>
-      <logger level="INFO" doc:name="Log - Aggregate metrics" doc:id="585d1131-1a1c-4869-869b-b17347c9f673" message="Aggregating metrics from the OrgId: #[vars.orgId]" />
-      <try doc:name="Try" doc:id="c8ea54e1-71fa-42f8-978c-3c66c0851659">
-        <flow-ref doc:name="api-call-coreservices-environments-flow" doc:id="fe31d9c5-d7ea-4b35-aea3-5491dbaf2a82" name="api-call-coreservices-environments-flow" />
+      <logger level="INFO" doc:name="Log - Aggregate metrics" doc:id="fcca4a91-6440-4480-9f15-444dd500191b" message="Aggregating metrics from the OrgId: #[vars.orgId]" />
+      <try doc:name="Try" doc:id="0dc7e0bb-7bec-4ec7-af9d-f779fc1af6ad">
+        <flow-ref doc:name="api-call-coreservices-environments-flow" doc:id="36cadee7-9b0e-487a-9570-b43e67d4c2c5" name="api-call-coreservices-environments-flow" />
         <error-handler>
-          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="09b6a316-7d56-42b9-aefc-e10bf2034792" type="HTTP:UNAUTHORIZED">
-            <ee:transform doc:name="Transform Message" doc:id="54966cb8-03a8-4542-a9ec-6c54ff199765">
+          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e70787c0-fffc-4ba4-9fe4-43a480122c97" type="HTTP:UNAUTHORIZED">
+            <ee:transform doc:name="Transform Message" doc:id="0c2620c3-dbcd-4404-abca-04a62d53a208">
               <ee:message />
               <ee:variables>
                 <ee:set-variable variableName="envError"><![CDATA[%dw 2.0
@@ -58,21 +58,33 @@ default  ({
           </on-error-continue>
         </error-handler>
       </try>
-      <scatter-gather doc:name="Scatter-Gather" doc:id="0960a8ca-9fc7-44e7-b7ef-e75dd735fb52" >
-        <route >
-          <ee:transform doc:name="Transform Message" doc:id="b6532715-cebc-4b10-a0c8-da222e1b14cc" />
-          <flow-ref doc:name="Flow Reference" doc:id="dad47d35-738f-4fa0-9226-ba485a14e4cd" name="get-API-flow" />
+      <foreach doc:name="For Each" doc:id="a91f87ea-46b4-4d85-888b-8812e71d88df" collection="#[payload.data]">
+        <scatter-gather doc:name="Scatter-Gather" doc:id="a2998223-16ee-47b2-aefd-9863a138b894">
+        <route>
+          <ee:transform doc:name="Transform Message" doc:id="04ae01db-0ce3-474b-af13-1f410aeefe9f">
+            <ee:message>
+              <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+            </ee:message>
+          </ee:transform>
+          <flow-ref doc:name="Flow Reference" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="get-API-flow" />
         </route>
-        <route >
-          <flow-ref doc:name="Flow Reference" doc:id="92713646-08e1-44d9-b0cb-dc9b93b2ea40" />
+        <route>
+          <flow-ref doc:name="Flow Reference" doc:id="7344850f-8daf-49f5-b194-17934730adf9" name="apitotal" />
         </route>
       </scatter-gather>
+      </foreach>
     </parallel-foreach>
-    <set-payload value="#[output application/json --- payload.payload]" doc:name="Set Final Payload" doc:id="8b70e956-a27e-4a4c-8344-162cd84f3bb9" />
+    <set-payload value="#[output application/json --- payload.payload]" doc:name="Set Final Payload" doc:id="7add134b-a8e6-4210-aeee-98dc83edca2c" />
   </flow>
-  <flow name="get-API-flow" doc:id="90389331-fd22-49bc-aebc-592cbdc06727">
-    <foreach doc:name="For Each" doc:id="634e855f-9897-46fe-9787-76cc628645e0" collection="#[payload.data]">
-      <ee:transform doc:name="Transform Message" doc:id="9cb4a7df-5885-4ae0-9aac-6a020b4d0f0b">
+  <flow name="apitotal" doc:id="2f9a3a0a-56ab-4f34-963f-7b587d2bff6c" >
+    <logger level="INFO" doc:name="Logger" doc:id="ff07dd05-5c80-49c3-8c9a-2dd19c0455e8" />
+  </flow>
+  <flow name="get-API-flow" doc:id="15b9f707-19d2-46c2-882c-d06986cc1ed7">
+      <ee:transform doc:name="Transform Message" doc:id="96bd13f4-355c-4fd9-bc39-ed395acf5793">
         <ee:message />
         <ee:variables>
           <ee:set-variable variableName="environmentId"><![CDATA[%dw 2.0
@@ -89,11 +101,11 @@ output application/java
 payload.isProduction]]></ee:set-variable>
         </ee:variables>
       </ee:transform>
-      <try doc:name="Try" doc:id="2b47dbda-84cc-49e5-b23c-99cc9dd9e6b1">
-        <flow-ref doc:name="api-call-api-manager-apis-flow" doc:id="d5cbe36a-b8fb-4d61-8e81-04137f266cd4" name="api-call-api-manager-apis-flow" />
+      <try doc:name="Try" doc:id="66a9e8f7-cbd8-4f68-b5f2-12b81ae2a232">
+        <flow-ref doc:name="api-call-api-manager-apis-flow" doc:id="79f011e0-d3d3-4cde-80b6-1ae8c67f8c77" name="api-call-api-manager-apis-flow" />
         <error-handler>
-          <on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_On Error Continue" doc:id="58c2ddb9-2ffb-422f-95fb-fbaaae617997" type="HTTP:FORBIDDEN">
-            <ee:transform doc:name="Transform Message" doc:id="69efbb92-cff5-4e13-a519-54de6e8ff8e0">
+          <on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_On Error Continue" doc:id="869a972f-cc74-4503-80ed-64ca0e6852b5" type="HTTP:FORBIDDEN">
+            <ee:transform doc:name="Transform Message" doc:id="e2ba4de3-d62d-4073-a563-d0d17532e25d">
               <ee:message />
               <ee:variables>
                 <ee:set-variable variableName="envError"><![CDATA[%dw 2.0
@@ -116,9 +128,9 @@ default  ({
           </on-error-continue>
         </error-handler>
       </try>
-      <remove-variable doc:name="Remove Variable" doc:id="e3fe2c4e-1d5d-42d1-a8fb-3b5b0218ae6d" variableName="apisTotalObtained" />
-      <set-variable value="#[payload.total default 0]" doc:name="Set Variable" doc:id="6cfa9c81-7270-4036-936f-978e0c2134b5" variableName="totalApi" />
-      <ee:transform doc:name="Transform Message" doc:id="d996fa31-630e-4306-a2c7-7b0857f79374">
+      <remove-variable doc:name="Remove Variable" doc:id="42d5e68b-f0fe-477a-a3e7-0dd0d2cf1894" variableName="apisTotalObtained" />
+      <set-variable value="#[payload.total default 0]" doc:name="Set Variable" doc:id="0e216370-59ff-49a3-8ed3-1c7642ac6ea7" variableName="totalApi" />
+      <ee:transform doc:name="Transform Message" doc:id="a83c04bb-9fff-4daf-80cc-06b1d4bd672d">
         <ee:message />
         <ee:variables>
           <ee:set-variable variableName="totalAPi"><![CDATA[%dw 2.0
@@ -140,8 +152,7 @@ else
 vars.totalApi  default {}]]></ee:set-variable>
         </ee:variables>
       </ee:transform>
-    </foreach>
-    <ee:transform doc:name="Transform Message" doc:id="5e024848-0cb6-4679-ace1-4d7cd1ee30b9" >
+    <ee:transform doc:name="Transform Message" doc:id="d52798ea-b59b-442b-b9c3-024b39434789" >
       <ee:message >
         <ee:set-payload ><![CDATA[%dw 2.0
 output application/json
