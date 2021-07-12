@@ -21,7 +21,23 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
     </ee:transform>
   </flow>
   <flow name="reuseMetrics-flow" doc:id="30b87a93-1bab-431a-939d-60c013261442" >
-    <parallel-foreach doc:name="For Each" doc:id="d8ebc470-6bec-4531-81a0-fc27ba884df2" collection="#[payload]">
+    <ee:transform doc:name="Initialize Business Groups List" doc:id="9c54892f-49e0-4a97-adea-efce062fb7cd">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="bgList" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+        <ee:set-variable variableName="masterorgName" ><![CDATA[%dw 2.0
+output application/json skipNullOn="everywhere"
+---
+(payload map (
+ if($.id == vars.masterorgId) $.name 
+ else null
+ )) reduce ($$)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="d8ebc470-6bec-4531-81a0-fc27ba884df2" collection="#[payload]">
       <ee:transform doc:name="Set Org Id, Name and Entitlements Vars" doc:id="63201132-cfdf-41e1-bc34-6c8248e53a0b">
         <ee:message />
         <ee:variables>
@@ -34,54 +50,92 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
       <try doc:name="Try" doc:id="0dc7e0bb-7bec-4ec7-af9d-f779fc1af6ad">
         <flow-ref doc:name="api-call-coreservices-environments-flow" doc:id="36cadee7-9b0e-487a-9570-b43e67d4c2c5" name="api-call-coreservices-environments-flow" />
         <error-handler>
-          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e70787c0-fffc-4ba4-9fe4-43a480122c97" type="HTTP:UNAUTHORIZED">
+          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e70787c0-fffc-4ba4-9fe4-43a480122c97">
             <ee:transform doc:name="Transform Message" doc:id="0c2620c3-dbcd-4404-abca-04a62d53a208">
-              <ee:message />
+              <ee:message >
+							</ee:message>
               <ee:variables>
-                <ee:set-variable variableName="envError"><![CDATA[%dw 2.0
+                <ee:set-variable variableName="envError" ><![CDATA[%dw 2.0
 output application/json
 ---
-({
-  "envId" : vars.environmentId,
-  "orgId" : vars.orgId,
-  "error" : "error",
-  "code" : attributes.http.status.code
-}) ++  (vars.envError ) 
-default  ({
-  "envId" : vars.environmentId,
-  "orgId" : vars.orgId,
-  "error" : "error",
-  "code" : attributes.http.status.code
-})]]></ee:set-variable>
+{
+	errorMessage: error.description,
+	errorCode: error.exception.errorMessage.typedAttributes.statusCode default 500
+}]]></ee:set-variable>
+                <ee:set-variable variableName="errors" ><![CDATA[%dw 2.0
+output application/json
+---
+(vars.errors) + (error.description)]]></ee:set-variable>
               </ee:variables>
             </ee:transform>
           </on-error-continue>
         </error-handler>
       </try>
-      <foreach doc:name="For Each" doc:id="a91f87ea-46b4-4d85-888b-8812e71d88df" collection="#[payload.data]">
-        <scatter-gather doc:name="Scatter-Gather" doc:id="a2998223-16ee-47b2-aefd-9863a138b894">
-        <route>
-          <ee:transform doc:name="Transform Message" doc:id="04ae01db-0ce3-474b-af13-1f410aeefe9f">
-            <ee:message>
-              <ee:set-payload><![CDATA[%dw 2.0
-output application/java
+      <choice doc:name="Choice" doc:id="e0f58f18-407f-4142-a5ce-6ffd5e2e4801" >
+				<when expression="#[!isEmpty(payload.data)]">
+					<ee:transform doc:name="Initialize Environments List" doc:id="788a7fab-c044-4f89-b49f-2958111ad771">
+						<ee:message>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="environmentsList" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<foreach doc:name="For Each" doc:id="a91f87ea-46b4-4d85-888b-8812e71d88df" collection="#[payload.data]">
+        <flow-ref doc:name="Flow Reference" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="get-API-flow" />
+      </foreach>
+				</when>
+				<otherwise >
+					<ee:transform doc:name="Environments List" doc:id="4d94fec1-c7ee-4c2b-865f-9ecbb9c7d1b7">
+            <ee:message />
+            <ee:variables>
+              <ee:set-variable variableName="environmentsList"><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+            </ee:variables>
+          </ee:transform>
+          <logger level="INFO" doc:name="Logger" doc:id="24b91252-4bbc-45a6-8140-b72b51fbc7c7" message="Getting API's failed"/>
+				</otherwise>
+			</choice>
+			<ee:transform doc:name="Build Business Groups List" doc:id="6ea9db10-900e-4536-8c73-c03929b69ebc">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+					<ee:set-variable variableName="bgList" ><![CDATA[%dw 2.0
+output application/json skipNullOn = "everywhere"
+---
+vars.bgList ++ 
+[{
+      "BusinessGroup": vars.orgName,
+      "OrgID": vars.orgId,
+      "Environments": vars.environmentsList,
+      "Error": vars.envError
+}]
+
+
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="632a5790-91f7-44f1-97a8-cf107b3a9f25" />
+    </foreach>
+		<ee:transform doc:name="Build Response" doc:id="4d00f497-09b7-41b0-b8cd-0b70f9d6b4ad" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
 ---
 {
+	"MasterOrg": vars.masterorgName,
+	"Quarter": "CYQ1",
+	"OrgId": vars.masterorgId,
+	"BusinessGroups": vars.bgList
 }]]></ee:set-payload>
-            </ee:message>
-          </ee:transform>
-          <flow-ref doc:name="Flow Reference" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="get-API-flow" />
-        </route>
-        <route>
-          <flow-ref doc:name="Flow Reference" doc:id="7344850f-8daf-49f5-b194-17934730adf9" name="apitotal" />
-        </route>
-      </scatter-gather>
-      </foreach>
-    </parallel-foreach>
-    <set-payload value="#[output application/json --- payload.payload]" doc:name="Set Final Payload" doc:id="7add134b-a8e6-4210-aeee-98dc83edca2c" />
-  </flow>
-  <flow name="apitotal" doc:id="2f9a3a0a-56ab-4f34-963f-7b587d2bff6c" >
-    <logger level="INFO" doc:name="Logger" doc:id="ff07dd05-5c80-49c3-8c9a-2dd19c0455e8" />
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
   </flow>
   <flow name="get-API-flow" doc:id="15b9f707-19d2-46c2-882c-d06986cc1ed7">
       <ee:transform doc:name="Transform Message" doc:id="96bd13f4-355c-4fd9-bc39-ed395acf5793">
@@ -104,61 +158,136 @@ payload.isProduction]]></ee:set-variable>
       <try doc:name="Try" doc:id="66a9e8f7-cbd8-4f68-b5f2-12b81ae2a232">
         <flow-ref doc:name="api-call-api-manager-apis-flow" doc:id="79f011e0-d3d3-4cde-80b6-1ae8c67f8c77" name="api-call-api-manager-apis-flow" />
         <error-handler>
-          <on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_On Error Continue" doc:id="869a972f-cc74-4503-80ed-64ca0e6852b5" type="HTTP:FORBIDDEN">
-            <ee:transform doc:name="Transform Message" doc:id="e2ba4de3-d62d-4073-a563-d0d17532e25d">
-              <ee:message />
+          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="869a972f-cc74-4503-80ed-64ca0e6852b5">
+            <ee:transform doc:name="Build Error Payload" doc:id="e2ba4de3-d62d-4073-a563-d0d17532e25d">
+              <ee:message >
+						</ee:message>
               <ee:variables>
-                <ee:set-variable variableName="envError"><![CDATA[%dw 2.0
+              <ee:set-variable variableName="errors" ><![CDATA[%dw 2.0
 output application/json
 ---
-({
-  "envId" : vars.environmentId,
-  "orgId" : vars.orgId,
-  "error" : "error",
-  "code" : attributes.http.status.code
-}) ++  (vars.envError ) 
-default  ({
-  "envId" : vars.environmentId,
-  "orgId" : vars.orgId,
-  "error" : "error",
-  "code" : attributes.http.status.code
-})]]></ee:set-variable>
+(vars.errors) + (error.description)]]></ee:set-variable>
+              <ee:set-variable variableName="apiError" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorMessage: error.description,
+	errorCode: error.exception.errorMessage.typedAttributes.statusCode default 500
+}]]></ee:set-variable>
               </ee:variables>
             </ee:transform>
           </on-error-continue>
         </error-handler>
       </try>
       <remove-variable doc:name="Remove Variable" doc:id="42d5e68b-f0fe-477a-a3e7-0dd0d2cf1894" variableName="apisTotalObtained" />
-      <set-variable value="#[payload.total default 0]" doc:name="Set Variable" doc:id="0e216370-59ff-49a3-8ed3-1c7642ac6ea7" variableName="totalApi" />
-      <ee:transform doc:name="Transform Message" doc:id="a83c04bb-9fff-4daf-80cc-06b1d4bd672d">
-        <ee:message />
-        <ee:variables>
-          <ee:set-variable variableName="totalAPi"><![CDATA[%dw 2.0
+		<choice doc:name="Choice" doc:id="1b2dbce7-4733-4fb3-a3ff-6815a2620983" >
+      <when expression="#[payload.assets != null]">
+        <ee:transform doc:name="Initialize API List" doc:id="91830456-13fd-4460-bcc9-19c26f9b5c54">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="apiList"><![CDATA[%dw 2.0
 output application/json
 ---
-if (payload.total != null) {
-	
-	"BusinessGroup" : vars.orgName,
-  	"orgID" : vars.orgId,
-  	"Environments" : [
-  		"EnvironmentID" : vars.environmentId,
-  		"EnvironmentName" : vars.environmentName,
-  		"isProduction": vars.isprod,
-  		"TotalAPI" : vars.totalApi
-  	]	
-} 
+[]]]></ee:set-variable>
+            <ee:set-variable variableName="apiIdList" ><![CDATA[%dw 2.0
+output application/json
+---
+flatten((payload.assets) map (asset,indexOfasset) -> 
+    (asset.apis map (api,indexOfApi) -> {
+    apiId: (api.id),
+    assetName: asset.exchangeAssetName
+}))]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+        <foreach doc:name="For Each" doc:id="5c45cb2e-52f3-4c77-8d19-29c5805d6e2e" collection="payload.assets">
+			<ee:transform doc:name="Set apiId" doc:id="e1ea13b4-9de3-4a12-ba54-f551028df005">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="apiId"><![CDATA[%dw 2.0
+output application/java
+---
+payload.apis[0].id]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<try doc:name="Try" doc:id="5dad4619-98ac-4b21-8a49-20401f30b1f6">
+				<flow-ref doc:name="api-call-api-manager-apis-flow" doc:id="2b9d36e1-79de-4c74-9976-5a9b60c77192" name="api-call-api-manager-contracts-flow" />
+				<error-handler>
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="bf3bf48f-4559-42e8-b1b3-257c1acb42b6">
+						<ee:transform doc:name="Build Error Payload" doc:id="5b329fb7-240a-4285-adf7-8f9c37b054c7">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorMessage: error.description,
+	errorCode: attributes.http.status.code default 500
+}
+]]></ee:set-payload>
+							</ee:message>
+							<ee:variables>
+							</ee:variables>
+						</ee:transform>
+					</on-error-continue>
+				</error-handler>
+			</try>
+			<ee:transform doc:name="Build API List" doc:id="f5d3450c-110d-47c6-b4c9-0705ae7c6630">
+				<ee:message />
+				<ee:variables>
+					<ee:set-variable variableName="apiList"><![CDATA[%dw 2.0
+output application/json skipNullOn = "everywhere"
+---
+vars.apiList ++ [{
+	ApiId: vars.apiId,
+    Contracts: payload.contracts map (contract,indexOfContract) -> {
+        ContractId: contract.id,
+        ContractName: contract.application.name,
+        Date: contract.approvedDate
+    }
+}] ]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+      </when>
+      <otherwise >
+        <ee:transform doc:name="Transform Message" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c" >
+          <ee:message >
+          </ee:message>
+          <ee:variables >
+            <ee:set-variable variableName="apiList" ><![CDATA[%dw 2.0
+output application/json
+---
+[
+	{	
+		"error" : vars.apiError
+	}
+]]]></ee:set-variable>
+          </ee:variables>
+        </ee:transform>
+        <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed"/>
+      </otherwise>
+    </choice>
+		<ee:transform doc:name="Build Environments List" doc:id="9dc40a71-8703-4f7e-b13b-4614dba063a3" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="environmentsList" ><![CDATA[%dw 2.0
+output application/json skipNullOn = "everywhere"
+var totalApiList = flatten(vars.apiList..Contracts)
+---
+vars.environmentsList ++ 
+[{
+	"EnvironmentID": vars.environmentId,
+	"EnvironmentName": vars.environmentName,
+	"isProduction": vars.isProd,
+	"TotalAPI's": sizeOf(vars.apiList) default null,
+	"TotalContracts": sizeOf(totalApiList) default null,
+	"UniqueClients": sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default null,
+	"Date": now(),
+	"Apis": vars.apiList,
 
-else
-vars.totalApi  default {}]]></ee:set-variable>
-        </ee:variables>
-      </ee:transform>
-    <ee:transform doc:name="Transform Message" doc:id="d52798ea-b59b-442b-b9c3-024b39434789" >
-      <ee:message >
-        <ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-(vars.totalAPi) ++ (vars.totalAPi) default vars.totalApi]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
+}]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
   </flow>
 </mule>
