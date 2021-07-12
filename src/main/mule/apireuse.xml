@@ -51,7 +51,7 @@ output application/json skipNullOn="everywhere"
         <flow-ref doc:name="api-call-coreservices-environments-flow" doc:id="36cadee7-9b0e-487a-9570-b43e67d4c2c5" name="api-call-coreservices-environments-flow" />
         <error-handler>
           <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e70787c0-fffc-4ba4-9fe4-43a480122c97">
-            <ee:transform doc:name="Transform Message" doc:id="0c2620c3-dbcd-4404-abca-04a62d53a208">
+            <ee:transform doc:name="Build Error Message" doc:id="0c2620c3-dbcd-4404-abca-04a62d53a208">
               <ee:message >
 							</ee:message>
               <ee:variables>
@@ -84,7 +84,7 @@ output application/json
 						</ee:variables>
 					</ee:transform>
 					<foreach doc:name="For Each" doc:id="a91f87ea-46b4-4d85-888b-8812e71d88df" collection="#[payload.data]">
-        <flow-ref doc:name="Flow Reference" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="get-API-flow" />
+        <flow-ref doc:name="Retrieve APIs" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="get-API-flow" />
       </foreach>
 				</when>
 				<otherwise >
@@ -97,7 +97,7 @@ output application/json
 []]]></ee:set-variable>
             </ee:variables>
           </ee:transform>
-          <logger level="INFO" doc:name="Logger" doc:id="24b91252-4bbc-45a6-8140-b72b51fbc7c7" message="Getting API's failed"/>
+          <logger level="INFO" doc:name="Logger Failed to retrive api" doc:id="24b91252-4bbc-45a6-8140-b72b51fbc7c7" message="Getting API's failed"/>
 				</otherwise>
 			</choice>
 			<ee:transform doc:name="Build Business Groups List" doc:id="6ea9db10-900e-4536-8c73-c03929b69ebc">
@@ -119,20 +119,13 @@ vars.bgList ++
 ]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-			<logger level="INFO" doc:name="Logger" doc:id="632a5790-91f7-44f1-97a8-cf107b3a9f25" />
+			<logger level="INFO" doc:name="Api Reuse Metrics Retrieved" doc:id="632a5790-91f7-44f1-97a8-cf107b3a9f25" message="Api Reuse Metrics Retrieved"/>
     </foreach>
 		<ee:transform doc:name="Build Response" doc:id="4d00f497-09b7-41b0-b8cd-0b70f9d6b4ad" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
-var quater = ( if ( now().month <= 3) 
-				"CYQ1" 
-			else if ((now().month >= 3) and (now().month <= 6))
-				"CQY2"
-			else if ((now().month >= 6) and (now().month <= 9))
-				"CQY3"
-			else 'CQY4'
-			)
+var quater = "CYQ" ++ (now() as String {format: "qqq"})
 ---
 {
 	"MasterOrg": vars.masterorgName,
@@ -146,7 +139,7 @@ var quater = ( if ( now().month <= 3)
 		</ee:transform>
   </flow>
   <flow name="get-API-flow" doc:id="15b9f707-19d2-46c2-882c-d06986cc1ed7">
-      <ee:transform doc:name="Transform Message" doc:id="96bd13f4-355c-4fd9-bc39-ed395acf5793">
+      <ee:transform doc:name="Initialize Environment Details" doc:id="96bd13f4-355c-4fd9-bc39-ed395acf5793">
         <ee:message />
         <ee:variables>
           <ee:set-variable variableName="environmentId"><![CDATA[%dw 2.0
@@ -220,7 +213,7 @@ payload.apis[0].id]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
 			<try doc:name="Try" doc:id="5dad4619-98ac-4b21-8a49-20401f30b1f6">
-				<flow-ref doc:name="api-call-api-manager-apis-flow" doc:id="2b9d36e1-79de-4c74-9976-5a9b60c77192" name="api-call-api-manager-contracts-flow" />
+				<flow-ref doc:name="api-call-api-manager-contracts-flow" doc:id="2b9d36e1-79de-4c74-9976-5a9b60c77192" name="api-call-api-manager-contracts-flow" />
 				<error-handler>
 					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="bf3bf48f-4559-42e8-b1b3-257c1acb42b6">
 						<ee:transform doc:name="Build Error Payload" doc:id="5b329fb7-240a-4285-adf7-8f9c37b054c7">
@@ -259,7 +252,7 @@ vars.apiList ++ [{
 		</foreach>
       </when>
       <otherwise >
-        <ee:transform doc:name="Transform Message" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c" >
+        <ee:transform doc:name="Build Error Plauload" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c" >
           <ee:message >
           </ee:message>
           <ee:variables >
