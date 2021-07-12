@@ -125,10 +125,18 @@ vars.bgList ++
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
+var quater = ( if ( now().month <= 3) 
+				"CYQ1" 
+			else if ((now().month >= 3) and (now().month <= 6))
+				"CQY2"
+			else if ((now().month >= 6) and (now().month <= 9))
+				"CQY3"
+			else 'CQY4'
+			)
 ---
 {
 	"MasterOrg": vars.masterorgName,
-	"Quarter": "CYQ1",
+	"Quarter": quater,
 	"OrgId": vars.masterorgId,
 	"BusinessGroups": vars.bgList
 }]]></ee:set-payload>
@@ -243,7 +251,7 @@ vars.apiList ++ [{
     Contracts: payload.contracts map (contract,indexOfContract) -> {
         ContractId: contract.id,
         ContractName: contract.application.name,
-        Date: contract.approvedDate
+        ApprovedDate: contract.approvedDate
     }
 }] ]]></ee:set-variable>
 				</ee:variables>
@@ -258,11 +266,7 @@ vars.apiList ++ [{
             <ee:set-variable variableName="apiList" ><![CDATA[%dw 2.0
 output application/json
 ---
-[
-	{	
-		"error" : vars.apiError
-	}
-]]]></ee:set-variable>
+[]]]></ee:set-variable>
           </ee:variables>
         </ee:transform>
         <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed"/>
@@ -280,11 +284,12 @@ vars.environmentsList ++
 	"EnvironmentID": vars.environmentId,
 	"EnvironmentName": vars.environmentName,
 	"isProduction": vars.isProd,
-	"TotalAPI's": sizeOf(vars.apiList) default null,
+	"TotalApis": sizeOf(vars.apiList) default null,
 	"TotalContracts": sizeOf(totalApiList) default null,
 	"UniqueClients": sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default null,
 	"Date": now(),
 	"Apis": vars.apiList,
+	"Error" : vars.apiError
 
 }]]]></ee:set-variable>
 			</ee:variables>
