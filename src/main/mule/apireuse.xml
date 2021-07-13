@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
   <flow name="core-platform-Login-flow" doc:id="48e4a132-7989-4e10-a6b4-e0e12cdd6277" >
     <ee:transform doc:name="Set Date and Error Variables" doc:id="1fff66b1-19ee-4027-b6f4-7a90d37c1b31">
       <ee:message />
@@ -106,14 +107,19 @@ output application/json
 			<ee:variables>
 					<ee:set-variable variableName="bgList" ><![CDATA[%dw 2.0
 output application/json skipNullOn = "everywhere"
+var envList = (vars.environmentsList reduce ((item, accum = {}) -> (
+  accum ++ (item.EnvironmentName): item
+)))
+
 ---
 vars.bgList ++ 
 [{
       "BusinessGroup": vars.orgName,
       "OrgID": vars.orgId,
-      "Environments": vars.environmentsList,
+      "Date": now(),
+      "Period": "CYQ" ++ (now() as String {format: "qqq"}),
       "Error": vars.envError
-}]
+} ++ envList]
 
 
 ]]></ee:set-variable>
@@ -125,14 +131,8 @@ vars.bgList ++
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
-var quater = "CYQ" ++ (now() as String {format: "qqq"})
 ---
-{
-	"MasterOrg": vars.masterorgName,
-	"Quarter": quater,
-	"OrgId": vars.masterorgId,
-	"BusinessGroups": vars.bgList
-}]]></ee:set-payload>
+vars.bgList]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 			</ee:variables>
@@ -265,27 +265,64 @@ output application/json
         <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed"/>
       </otherwise>
     </choice>
+		<flow-ref doc:name="Retrieve Historical Reuse Metric Data" doc:id="9213125e-b85f-46e2-b224-928c191667f9" name="retrive-historical-reuse-metric-data-Flow"/>
 		<ee:transform doc:name="Build Environments List" doc:id="9dc40a71-8703-4f7e-b13b-4614dba063a3" >
 			<ee:message />
 			<ee:variables >
 				<ee:set-variable variableName="environmentsList" ><![CDATA[%dw 2.0
 output application/json skipNullOn = "everywhere"
 var totalApiList = flatten(vars.apiList..Contracts)
+var currentTotalApis = sizeOf(vars.apiList) default 0
+var currentTotalContracts = sizeOf(totalApiList) default 0
+var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default 0
+
 ---
 vars.environmentsList ++ 
 [{
 	"EnvironmentID": vars.environmentId,
 	"EnvironmentName": vars.environmentName,
 	"isProduction": vars.isProd,
-	"TotalApis": sizeOf(vars.apiList) default null,
-	"TotalContracts": sizeOf(totalApiList) default null,
-	"UniqueClients": sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default null,
-	"Date": now(),
+	"CurrentTotalApis": currentTotalApis,
+	"CurrentTotalContracts": currentTotalContracts,
+	"CurrentUniqueContracts": currentUniqueContracts,
+	"DeltaTotalApis": currentTotalApis - vars.historicalData.TotalApis,
+	"DeltaTotalContracts": currentTotalContracts - vars.historicalData.TotalContracts,
+	"DeltaUniqueContracts": currentUniqueContracts - vars.historicalData.UniqueContracts,
 	"Apis": vars.apiList,
 	"Error" : vars.apiError
 
 }]]]></ee:set-variable>
+				<ee:set-variable variableName="currentMetricData" ><![CDATA[%dw 2.0
+output application/json skipNullOn = "everywhere"
+var totalApiList = flatten(vars.apiList..Contracts)
+var currentTotalApis = sizeOf(vars.apiList) default 0
+var currentTotalContracts = sizeOf(totalApiList) default 0
+var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default 0
+
+---
+{
+	"TotalApis": currentTotalApis,
+	"TotalContracts": currentTotalContracts,
+	"UniqueContracts": currentUniqueContracts
+}]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
+		<flow-ref doc:name="Store Current Reuse Metric Data Flow" doc:id="f5d376d0-f2ac-4af5-b339-57521fd04066" name="store-current-reuse-metric-data-Flow"/>
   </flow>
+	<sub-flow name="retrive-historical-reuse-metric-data-Flow" doc:id="81f26694-63f7-46a5-af72-2c9bae95a8de" >
+		<os:retrieve doc:name="Retrieve" doc:id="a51c7700-0800-4b99-ad0b-a9719ff79607" key="#[vars.environmentId]" objectStore="Reuse_MetricObject_store" target="historicalData">
+					<os:default-value><![CDATA[#[output application/json
+---
+{
+  "TotalApis": 0,
+  "TotalContracts": 0,
+  "UniqueContracts": 0
+}]]]></os:default-value>
+				</os:retrieve>
+	</sub-flow>
+	<sub-flow name="store-current-reuse-metric-data-Flow" doc:id="887bd94e-834a-4f5b-b8d8-aa621bf0273f" >
+		<os:store doc:name="Store" doc:id="38437240-2e93-417a-ab99-a1e906d7c79a" key="#[vars.environmentId]" objectStore="Reuse_MetricObject_store">
+			<os:value ><![CDATA[#[vars.currentMetricData]]]></os:value>
+		</os:store>
+	</sub-flow>
 </mule>
