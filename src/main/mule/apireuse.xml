@@ -180,8 +180,11 @@ output application/json
           </on-error-continue>
         </error-handler>
       </try>
-      <remove-variable doc:name="Remove Variable" doc:id="42d5e68b-f0fe-477a-a3e7-0dd0d2cf1894" variableName="apisTotalObtained" />
-		<choice doc:name="Choice" doc:id="1b2dbce7-4733-4fb3-a3ff-6815a2620983" >
+      <remove-variable doc:name="Apis Total Obtained" doc:id="42d5e68b-f0fe-477a-a3e7-0dd0d2cf1894" variableName="apisTotalObtained" />
+		<remove-variable doc:name="Requests Count" doc:id="9ff84a77-1afd-47b4-8bda-06e4606ab3d4" variableName="requestsCount"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="519c209b-148a-4c39-86aa-15d80a0577bf" >
+			<route >
+				<choice doc:name="Choice" doc:id="1b2dbce7-4733-4fb3-a3ff-6815a2620983">
       <when expression="#[payload.assets != null]">
         <ee:transform doc:name="Initialize API List" doc:id="91830456-13fd-4460-bcc9-19c26f9b5c54">
 			<ee:message>
@@ -191,7 +194,7 @@ output application/json
 output application/json
 ---
 []]]></ee:set-variable>
-            <ee:set-variable variableName="apiIdList" ><![CDATA[%dw 2.0
+            <ee:set-variable variableName="apiIdList"><![CDATA[%dw 2.0
 output application/json
 ---
 flatten((payload.assets) map (asset,indexOfasset) -> 
@@ -251,20 +254,25 @@ vars.apiList ++ [{
 			</ee:transform>
 		</foreach>
       </when>
-      <otherwise >
-        <ee:transform doc:name="Build Error Plauload" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c" >
-          <ee:message >
+      <otherwise>
+        <ee:transform doc:name="Build Error Payload" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c">
+          <ee:message>
           </ee:message>
-          <ee:variables >
-            <ee:set-variable variableName="apiList" ><![CDATA[%dw 2.0
+          <ee:variables>
+            <ee:set-variable variableName="apiList"><![CDATA[%dw 2.0
 output application/json
 ---
 []]]></ee:set-variable>
           </ee:variables>
         </ee:transform>
-        <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed"/>
+        <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed" />
       </otherwise>
     </choice>
+			</route>
+			<route >
+				<flow-ref doc:name="Retrieve Reuse Analytics " doc:id="d58eebef-4e47-45e2-baaa-da6a9a29cc57" name="retrive-analytics-Flow"/>
+			</route>
+		</scatter-gather>
 		<flow-ref doc:name="Retrieve Historical Reuse Metric Data" doc:id="9213125e-b85f-46e2-b224-928c191667f9" name="retrive-historical-reuse-metric-data-Flow"/>
 		<ee:transform doc:name="Build Environments List" doc:id="9dc40a71-8703-4f7e-b13b-4614dba063a3" >
 			<ee:message />
@@ -275,7 +283,7 @@ var totalApiList = flatten(vars.apiList..Contracts)
 var currentTotalApis = sizeOf(vars.apiList) default 0
 var currentTotalContracts = sizeOf(totalApiList) default 0
 var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default 0
-
+var currentAverageRequestsPerContract = if ( currentTotalContracts != 0 ) vars.requestsCount / currentTotalContracts else 0
 ---
 vars.environmentsList ++ 
 [{
@@ -285,9 +293,11 @@ vars.environmentsList ++
 	"CurrentTotalApis": currentTotalApis,
 	"CurrentTotalContracts": currentTotalContracts,
 	"CurrentUniqueContracts": currentUniqueContracts,
+	"CurrentAverageRequestsPerContract": currentAverageRequestsPerContract as String {format: "#.##"} default 0,
 	"DeltaTotalApis": currentTotalApis - vars.historicalData.TotalApis,
 	"DeltaTotalContracts": currentTotalContracts - vars.historicalData.TotalContracts,
 	"DeltaUniqueContracts": currentUniqueContracts - vars.historicalData.UniqueContracts,
+	"DeltaRequestsPerContract": (currentAverageRequestsPerContract - vars.historicalData.RequestsPerContract) as String {format: "#.##"} default 0,
 	"Apis": vars.apiList,
 	"Error" : vars.apiError
 
@@ -298,17 +308,30 @@ var totalApiList = flatten(vars.apiList..Contracts)
 var currentTotalApis = sizeOf(vars.apiList) default 0
 var currentTotalContracts = sizeOf(totalApiList) default 0
 var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default 0
-
 ---
 {
 	"TotalApis": currentTotalApis,
 	"TotalContracts": currentTotalContracts,
-	"UniqueContracts": currentUniqueContracts
+	"UniqueContracts": currentUniqueContracts,
+	"RequestsPerContract": if ( currentTotalContracts != 0 ) vars.requestsCount / currentTotalContracts else 0,
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Store Current Reuse Metric Data Flow" doc:id="f5d376d0-f2ac-4af5-b339-57521fd04066" name="store-current-reuse-metric-data-Flow"/>
   </flow>
+	<sub-flow name="retrive-analytics-Flow" doc:id="90e95544-8e52-42e9-8c51-5cc4f1af21df" >
+		<flow-ref doc:name="Flow Reference" doc:id="f9b7a8ba-3705-4070-af9e-9a854fb3fc7d" name="api-call-analytics-query-flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="0d549dc2-abbd-40e5-8351-c8d433bb3abb" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="requestsCount" ><![CDATA[%dw 2.0
+output application/java
+---
+sum((payload.response..client_id) flatMap (item,indexOfItem) -> item..count) default 0]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
 	<sub-flow name="retrive-historical-reuse-metric-data-Flow" doc:id="81f26694-63f7-46a5-af72-2c9bae95a8de" >
 		<os:retrieve doc:name="Retrieve" doc:id="a51c7700-0800-4b99-ad0b-a9719ff79607" key="#[vars.environmentId]" objectStore="Reuse_MetricObject_store" target="historicalData">
 					<os:default-value><![CDATA[#[output application/json
@@ -316,7 +339,8 @@ var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> it
 {
   "TotalApis": 0,
   "TotalContracts": 0,
-  "UniqueContracts": 0
+  "UniqueContracts": 0,
+  "RequestsPerContract": 0
 }]]]></os:default-value>
 				</os:retrieve>
 	</sub-flow>
