@@ -85,7 +85,8 @@ output application/json
 						</ee:variables>
 					</ee:transform>
 					<foreach doc:name="For Each" doc:id="a91f87ea-46b4-4d85-888b-8812e71d88df" collection="#[payload.data]">
-        <flow-ref doc:name="Retrieve APIs" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="get-API-flow" />
+        <flow-ref doc:name="Retrieve APIs" doc:id="30ee34c4-290e-4958-917f-de69073b82ba" name="Retrieve-apis-Flow" />
+            <remove-variable doc:name="Remove apiError Variable" doc:id="2c5fa387-142a-4dc4-a9da-2666dcecf3b2" variableName="apiError"/>
       </foreach>
 				</when>
 				<otherwise >
@@ -127,7 +128,8 @@ vars.bgList ++
 		</ee:transform>
 			<logger level="INFO" doc:name="Api Reuse Metrics Retrieved" doc:id="632a5790-91f7-44f1-97a8-cf107b3a9f25" message="Api Reuse Metrics Retrieved"/>
     </foreach>
-		<ee:transform doc:name="Build Response" doc:id="4d00f497-09b7-41b0-b8cd-0b70f9d6b4ad" >
+		<remove-variable doc:name="Remove enverror Variable" doc:id="b32d0973-d0c6-45e5-b99e-0e178944a350" variableName="envError"/>
+    <ee:transform doc:name="Build Final Response" doc:id="4d00f497-09b7-41b0-b8cd-0b70f9d6b4ad" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -138,7 +140,7 @@ vars.bgList]]></ee:set-payload>
 			</ee:variables>
 		</ee:transform>
   </flow>
-  <flow name="get-API-flow" doc:id="15b9f707-19d2-46c2-882c-d06986cc1ed7">
+  <flow name="Retrieve-apis-Flow" doc:id="15b9f707-19d2-46c2-882c-d06986cc1ed7">
       <ee:transform doc:name="Initialize Environment Details" doc:id="96bd13f4-355c-4fd9-bc39-ed395acf5793">
         <ee:message />
         <ee:variables>
@@ -221,16 +223,20 @@ payload.apis[0].id]]></ee:set-variable>
 					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="bf3bf48f-4559-42e8-b1b3-257c1acb42b6">
 						<ee:transform doc:name="Build Error Payload" doc:id="5b329fb7-240a-4285-adf7-8f9c37b054c7">
 							<ee:message>
-								<ee:set-payload><![CDATA[%dw 2.0
+							</ee:message>
+							<ee:variables>
+                        <ee:set-variable variableName="apiList" ><![CDATA[%dw 2.0
+output application/json
+---
+[]
+]]></ee:set-variable>
+                        <ee:set-variable variableName="contractsError" ><![CDATA[%dw 2.0
 output application/json
 ---
 {
 	errorMessage: error.description,
-	errorCode: attributes.http.status.code default 500
-}
-]]></ee:set-payload>
-							</ee:message>
-							<ee:variables>
+	errorCode: error.exception.errorMessage.typedAttributes.statusCode default 500
+}]]></ee:set-variable>
 							</ee:variables>
 						</ee:transform>
 					</on-error-continue>
@@ -248,7 +254,8 @@ vars.apiList ++ [{
         ContractId: contract.id,
         ContractName: contract.application.name,
         ApprovedDate: contract.approvedDate
-    }
+    },
+	Error: vars.contractsError
 }] ]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
@@ -320,12 +327,34 @@ var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> it
 		<flow-ref doc:name="Store Current Reuse Metric Data Flow" doc:id="f5d376d0-f2ac-4af5-b339-57521fd04066" name="store-current-reuse-metric-data-Flow"/>
   </flow>
 	<sub-flow name="retrive-analytics-Flow" doc:id="90e95544-8e52-42e9-8c51-5cc4f1af21df" >
-		<flow-ref doc:name="Flow Reference" doc:id="f9b7a8ba-3705-4070-af9e-9a854fb3fc7d" name="api-call-analytics-query-flow"/>
+		<try doc:name="Try" doc:id="9347ede5-d62b-4753-ae71-e5bf50257290" >
+      <flow-ref doc:name="api-call-analytics-query-flow" doc:id="f9b7a8ba-3705-4070-af9e-9a854fb3fc7d" name="api-call-analytics-query-flow" />
+      <error-handler >
+        <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="49fa503c-b52f-46d4-aa25-d0693d475e92" >
+          <ee:transform doc:name="Build Error Payload" doc:id="c00f9359-8fdc-4a92-9f16-ed013fb101bf">
+      <ee:message />
+      <ee:variables>
+              <ee:set-variable variableName="requestsCount" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+              <ee:set-variable variableName="apiAnalyticsError" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorMessage: error.description,
+	errorCode: error.exception.errorMessage.typedAttributes.statusCode default 500
+}]]></ee:set-variable>
+      </ee:variables>
+    </ee:transform>
+        </on-error-continue>
+      </error-handler>
+    </try>
 		<ee:transform doc:name="Transform Message" doc:id="0d549dc2-abbd-40e5-8351-c8d433bb3abb" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="requestsCount" ><![CDATA[%dw 2.0
+        <ee:set-variable variableName="requestsCount" ><![CDATA[%dw 2.0
 output application/java
 ---
 sum((payload.response..client_id) flatMap (item,indexOfItem) -> item..count) default 0]]></ee:set-variable>
