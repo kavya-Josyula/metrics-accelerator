@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
     <apikit:config name="api-config" api="api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" raml="api.raml" />
-    <flow name="web-main" doc:id="21dfe96e-4a3e-4810-8a77-9a84600f1a4b" >
-		<http:listener doc:name="Listener" doc:id="a7a27ecf-5e78-414d-a4ff-9b8680b1bac1" config-ref="HTTP_Listener_config" path="/*"/>
-		<choice doc:name="Choice" doc:id="e720d2e4-713c-4ee1-8f5d-6180e02af532" >
-			<when expression="#[p('embedded.dashboard.enabled')]">
-				<http:load-static-resource doc:name="Load static resource" doc:id="7aae6e23-0946-4fd6-a4ce-8459f9f08885" resourceBasePath="${mule.home}/apps/${app.name}/web/" />
-			</when>
-		</choice>
-	</flow>
-	<flow name="api-main">
+    <flow name="web-main" doc:id="21dfe96e-4a3e-4810-8a77-9a84600f1a4b">
+        <http:listener doc:name="Listener" doc:id="a7a27ecf-5e78-414d-a4ff-9b8680b1bac1" config-ref="HTTP_Listener_config" path="/*" />
+        <choice doc:name="Choice" doc:id="e720d2e4-713c-4ee1-8f5d-6180e02af532">
+            <when expression="#[p('embedded.dashboard.enabled')]">
+                <http:load-static-resource doc:name="Load static resource" doc:id="7aae6e23-0946-4fd6-a4ce-8459f9f08885" resourceBasePath="${mule.home}/apps/${app.name}/web/" />
+            </when>
+        </choice>
+    </flow>
+    <flow name="api-main">
         <http:listener config-ref="HTTP_Listener_config" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]" />
             <http:error-response statusCode="#[vars.httpStatus default 500]">
@@ -114,17 +114,16 @@
             </on-error-propagate>
         </error-handler>
     </flow>
-     <flow name="get:\apireuse-metrics:api-config">
+    <flow name="get:\apireuse-metrics:api-config">
         <logger level="INFO" message="get:\apireuse-metrics:api-config" />
-    <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="d97c2a60-09ce-4bc9-b6ed-a5ee0e68d867" name="common-set-auth-vars-from-headers" />
-    <flow-ref doc:name="Core Platform Login Flow" doc:id="2e0a7e9b-4fea-41f7-b8c4-77ac1f717535" name="core-platform-Login-flow"/>
-    <flow-ref doc:name="Aggregator Reuse Metrics Flow" doc:id="49dc8388-c52e-4a20-8c2c-b1fee8f5ec00" name="reuseMetrics-flow"/>
+        <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="d97c2a60-09ce-4bc9-b6ed-a5ee0e68d867" name="common-set-auth-vars-from-headers" />
+        <flow-ref doc:name="Core Platform Login Flow" doc:id="2e0a7e9b-4fea-41f7-b8c4-77ac1f717535" name="core-platform-Login-flow" />
+        <flow-ref doc:name="Aggregator Reuse Metrics Flow" doc:id="49dc8388-c52e-4a20-8c2c-b1fee8f5ec00" name="reuseMetrics-flow" />
     </flow>
-
     <flow name="get:\platform-metrics:api-config">
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="a99d508d-5bd1-4627-88d1-fec6fb4ed7cf" name="common-set-auth-vars-from-headers" />
-        <flow-ref doc:name="Set Aggregator Details From Query Params Flow Reference" doc:id="526a1967-37bb-499f-a47d-9c469bb3df26" name="common-set-aggregator-vars-from-query-params"/>
-		<flow-ref doc:name="Aggregator Master Flow Reference" doc:id="5484cc09-2351-49d6-b728-a0d4b0b0d1b9" name="aggregator-platform-metrics-master-flow" />
+        <flow-ref doc:name="Set Aggregator Details From Query Params Flow Reference" doc:id="526a1967-37bb-499f-a47d-9c469bb3df26" name="common-set-aggregator-vars-from-query-params" />
+        <flow-ref doc:name="Aggregator Master Flow Reference" doc:id="5484cc09-2351-49d6-b728-a0d4b0b0d1b9" name="aggregator-platform-metrics-master-flow" />
     </flow>
     <flow name="post:\platform-metrics\load:api-config">
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="e514bd7d-bdbc-4492-844c-b9d4549155f9" name="common-set-auth-vars-from-headers" />
@@ -144,12 +143,65 @@
     </flow>
     <flow name="get:\sdlc-metrics:api-config">
         <set-variable value="#[attributes.queryParams.raw]" doc:name="Set Raw Data flag" doc:id="a9f8c832-6093-465b-b738-bdea7988b782" variableName="rawData" />
-		<flow-ref doc:name="Set SDLC Details" doc:id="2e0169ea-1652-48ef-89ca-7bc044121f69" name="common-set-sdlc-details"/>
-		<flow-ref doc:name="Aggregator SDLC Flow Reference" doc:id="1dcfab3e-3016-4bed-8234-763027f4760a" name="aggregator-sdlc-metrics-main-flow" />
+        <flow-ref doc:name="Set SDLC Details" doc:id="2e0169ea-1652-48ef-89ca-7bc044121f69" name="common-set-sdlc-details" />
+        <flow-ref doc:name="Aggregator SDLC Flow Reference" doc:id="1dcfab3e-3016-4bed-8234-763027f4760a" name="aggregator-sdlc-metrics-main-flow" />
     </flow>
     <flow name="post:\sdlc-metrics\load:api-config">
         <flow-ref doc:name="Set Loader Details From Payload Flow Reference" doc:id="5be122d9-d5e8-4059-b082-2eab2c5c4845" name="common-set-loader-vars-from-payload" />
-		<flow-ref doc:name="Set SDLC Details" doc:id="700186a4-a8b4-4fc4-bb36-34f80e0129d1" name="common-set-sdlc-details"/>
-		<flow-ref doc:name="Loader SDLC Flow Reference" doc:id="c84138ab-9d1d-4edf-840e-12d9458584e4" name="loader-sdlc-router-flow" />
+        <flow-ref doc:name="Set SDLC Details" doc:id="700186a4-a8b4-4fc4-bb36-34f80e0129d1" name="common-set-sdlc-details" />
+        <flow-ref doc:name="Loader SDLC Flow Reference" doc:id="c84138ab-9d1d-4edf-840e-12d9458584e4" name="loader-sdlc-router-flow" />
+    </flow>
+    <flow name="get:\environmentApis:api-config" doc:id="14cb90bc-2106-4350-8ee5-f59bccb48c41">
+        <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="d2a31a53-d760-40b1-8826-3c97fd7bc007" name="common-set-auth-vars-from-headers" />
+        <flow-ref doc:name="Core Platform Login Flow" doc:id="8c9b7ad2-29f8-4624-b701-7ea578b9512c" name="core-platform-Login-flow" />
+        <flow-ref doc:name="apireuse-environment-apis" doc:id="655c35ec-7e77-4a75-ba20-a21d57914e10" name="apireuse-environment-apis" />
+        <ee:transform doc:name="Transform Message" doc:id="f7e0d557-b150-410b-b2a0-017ed30753f5" >
+      <ee:message >
+        <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var envir = flatten(vars.acc_envir.data)
+var assets = flatten(vars.acc_assets.assets)
+var hold = flatten(vars.acc_contracts.data)
+var test = flatten(hold.payload.contracts)
+var contracts = flatten(test)
+---
+{   
+	MasterOrg: payload.name reduce($$ ++ $),
+	Quarter: 'CYQ3' as String,
+	OrgId: payload.id reduce($$ ++ $),
+	BusinessGroups: payload map (value, box) -> {
+		BusinessGroup: value.name,
+		OrgId: assets.organizationId[0],
+		Environments: envir map (item, index) -> {
+			EnvironmentId: item.id,
+            EnvironmentName: item.name,
+            isProduction: item.isProduction,
+            (TotalApis: sizeOf(contracts.id)) if(item.id == vars.acc_contracts.EnvironmentId),
+            TotalContracts: sizeOf(contracts.application.id),
+            UniqueClients: sizeOf(contracts.application.id distinctBy (value) -> {"unique" : value}),
+            Date: now(),
+            (if(item.id == vars.acc_contracts.EnvironmentId[0]) {
+           	Apis: contracts map (circle, square) -> {
+           		ApiId: circle.id,
+           		Contracts: { 
+           			ContractId: circle.application.id,
+           			ContractName: circle.application.name,
+           			ApprovalDate: circle.approvedDate }}}
+           	else (Apis: []))
+           		}
+        }      
+}]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+    <logger level="INFO" doc:name="Logger" doc:id="7a2ba83c-8daf-4d55-b3f5-5c93af1b312d" message="get:\environmentApis:api-config" />
+    </flow>
+    <flow name="post:\platform-metrics\load:application\json:api-config">
+        <logger level="INFO" message="post:\platform-metrics\load:application\json:api-config" />
+    </flow>
+    <flow name="post:\sdlc-metrics\load:application\json:api-config">
+        <logger level="INFO" message="post:\sdlc-metrics\load:application\json:api-config" />
+    </flow>
+    <flow name="post:\business-metrics\load:application\json:api-config">
+        <logger level="INFO" message="post:\business-metrics\load:application\json:api-config" />
     </flow>
 </mule>

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
   <flow name="core-platform-Login-flow" doc:id="48e4a132-7989-4e10-a6b4-e0e12cdd6277" >
     <ee:transform doc:name="Set Date and Error Variables" doc:id="1fff66b1-19ee-4027-b6f4-7a90d37c1b31">
       <ee:message />
@@ -180,8 +181,11 @@ output application/json
           </on-error-continue>
         </error-handler>
       </try>
-      <remove-variable doc:name="Remove Variable" doc:id="42d5e68b-f0fe-477a-a3e7-0dd0d2cf1894" variableName="apisTotalObtained" />
-		<choice doc:name="Choice" doc:id="1b2dbce7-4733-4fb3-a3ff-6815a2620983" >
+      <remove-variable doc:name="Apis Total Obtained" doc:id="42d5e68b-f0fe-477a-a3e7-0dd0d2cf1894" variableName="apisTotalObtained" />
+		<remove-variable doc:name="Requests Count" doc:id="9ff84a77-1afd-47b4-8bda-06e4606ab3d4" variableName="requestsCount"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="519c209b-148a-4c39-86aa-15d80a0577bf" >
+			<route >
+				<choice doc:name="Choice" doc:id="1b2dbce7-4733-4fb3-a3ff-6815a2620983">
       <when expression="#[payload.assets != null]">
         <ee:transform doc:name="Initialize API List" doc:id="91830456-13fd-4460-bcc9-19c26f9b5c54">
 			<ee:message>
@@ -191,7 +195,7 @@ output application/json
 output application/json
 ---
 []]]></ee:set-variable>
-            <ee:set-variable variableName="apiIdList" ><![CDATA[%dw 2.0
+            <ee:set-variable variableName="apiIdList"><![CDATA[%dw 2.0
 output application/json
 ---
 flatten((payload.assets) map (asset,indexOfasset) -> 
@@ -251,20 +255,25 @@ vars.apiList ++ [{
 			</ee:transform>
 		</foreach>
       </when>
-      <otherwise >
-        <ee:transform doc:name="Build Error Plauload" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c" >
-          <ee:message >
+      <otherwise>
+        <ee:transform doc:name="Build Error Payload" doc:id="e1805c66-e91a-4dea-a93b-ae70bcb9366c">
+          <ee:message>
           </ee:message>
-          <ee:variables >
-            <ee:set-variable variableName="apiList" ><![CDATA[%dw 2.0
+          <ee:variables>
+            <ee:set-variable variableName="apiList"><![CDATA[%dw 2.0
 output application/json
 ---
 []]]></ee:set-variable>
           </ee:variables>
         </ee:transform>
-        <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed"/>
+        <logger level="INFO" doc:name="Logger" doc:id="55619170-e416-4a4a-9736-76a8ee99aa7b" message="Getting API's failed" />
       </otherwise>
     </choice>
+			</route>
+			<route >
+				<flow-ref doc:name="Retrieve Reuse Analytics " doc:id="d58eebef-4e47-45e2-baaa-da6a9a29cc57" name="retrive-analytics-Flow"/>
+			</route>
+		</scatter-gather>
 		<flow-ref doc:name="Retrieve Historical Reuse Metric Data" doc:id="9213125e-b85f-46e2-b224-928c191667f9" name="retrive-historical-reuse-metric-data-Flow"/>
 		<ee:transform doc:name="Build Environments List" doc:id="9dc40a71-8703-4f7e-b13b-4614dba063a3" >
 			<ee:message />
@@ -275,7 +284,7 @@ var totalApiList = flatten(vars.apiList..Contracts)
 var currentTotalApis = sizeOf(vars.apiList) default 0
 var currentTotalContracts = sizeOf(totalApiList) default 0
 var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default 0
-
+var currentAverageRequestsPerContract = if ( currentTotalContracts != 0 ) vars.requestsCount / currentTotalContracts else 0
 ---
 vars.environmentsList ++ 
 [{
@@ -285,9 +294,11 @@ vars.environmentsList ++
 	"CurrentTotalApis": currentTotalApis,
 	"CurrentTotalContracts": currentTotalContracts,
 	"CurrentUniqueContracts": currentUniqueContracts,
+	"CurrentAverageRequestsPerContract": currentAverageRequestsPerContract as String {format: "#.##"} default 0,
 	"DeltaTotalApis": currentTotalApis - vars.historicalData.TotalApis,
 	"DeltaTotalContracts": currentTotalContracts - vars.historicalData.TotalContracts,
 	"DeltaUniqueContracts": currentUniqueContracts - vars.historicalData.UniqueContracts,
+	"DeltaRequestsPerContract": (currentAverageRequestsPerContract - vars.historicalData.RequestsPerContract) as String {format: "#.##"} default 0,
 	"Apis": vars.apiList,
 	"Error" : vars.apiError
 
@@ -298,25 +309,178 @@ var totalApiList = flatten(vars.apiList..Contracts)
 var currentTotalApis = sizeOf(vars.apiList) default 0
 var currentTotalContracts = sizeOf(totalApiList) default 0
 var currentUniqueContracts = sizeOf(totalApiList distinctBy ((item, index) -> item.ContractName)) default 0
-
 ---
 {
 	"TotalApis": currentTotalApis,
 	"TotalContracts": currentTotalContracts,
-	"UniqueContracts": currentUniqueContracts
+	"UniqueContracts": currentUniqueContracts,
+	"RequestsPerContract": if ( currentTotalContracts != 0 ) vars.requestsCount / currentTotalContracts else 0,
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Store Current Reuse Metric Data Flow" doc:id="f5d376d0-f2ac-4af5-b339-57521fd04066" name="store-current-reuse-metric-data-Flow"/>
   </flow>
-	<sub-flow name="retrive-historical-reuse-metric-data-Flow" doc:id="81f26694-63f7-46a5-af72-2c9bae95a8de" >
+	<flow name="apireuse-environment-apis" doc:id="6da33ecc-c879-439c-b242-e0810edc7ac9">
+    <ee:transform doc:name="Transform Message" doc:id="13bd6bb1-721b-4ec9-a16a-a718568c0ed5" >
+      <ee:message >
+        <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+      </ee:message>
+      <ee:variables >
+        <ee:set-variable variableName="acc_envir" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+        <ee:set-variable variableName="acc_assets" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+        <ee:set-variable variableName="acc_contracts" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+      </ee:variables>
+    </ee:transform>
+    <try doc:name="Try" doc:id="a965327d-6687-4699-9848-baef0418c538" >
+      <foreach doc:name="For Each Environment" doc:id="2bde3029-cdfa-4d85-948c-79918e4aa39b" collection="payload.id" counterVariableName="counterE">
+      <http:request method="GET" doc:name="Request Environments" doc:id="08809140-9877-4c9f-907a-5a86aca9a670" config-ref="HTTP_Request_configuration" path="/accounts/api/organizations/{id}/environments" targetValue="payload">
+          <http:headers><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	Authorization: "bearer " ++ vars.token as String
+}]]]></http:headers>
+          <http:uri-params><![CDATA[#[output application/json
+---
+{
+	"id" : payload
+}]]]></http:uri-params>
+        </http:request>
+        <ee:transform doc:name="Transform Message" doc:id="0a3b6dbe-af5b-401f-9832-8cb069e1b4c5">
+          <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+          </ee:message>
+          <ee:variables>
+            <ee:set-variable variableName="envir"><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+            <ee:set-variable variableName="acc_envir" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.acc_envir + payload]]></ee:set-variable>
+          </ee:variables>
+        </ee:transform>
+        <try doc:name="Try" doc:id="a03927cf-c999-4439-96da-5a169824315a">
+          <foreach doc:name="For Each Asset" doc:id="892805c9-47b4-4445-9e46-87241b98b96e" collection="#[%dw 2.0&#10;output application/json&#10;var flat = flatten(vars.envir.data)&#10;---&#10;flat.id]" counterVariableName="counterA">
+          <set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload as String]" doc:name="Set Current EnvirId" doc:id="e451ebf6-63b7-48b6-82ee-42458a5644b5" variableName="curr_envir_id"/>
+            <http:request method="GET" doc:name="Request Assets" doc:id="928d29ea-d677-455d-bb8f-c117f5483aae" config-ref="HTTP_Request_configuration" path="/apimanager/api/v1/organizations/{organizationId}/environments/{environmentId}/apis" targetValue="payload">
+              <http:headers><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	Authorization: "bearer " ++ vars.token as String
+}]]]></http:headers>
+              <http:uri-params><![CDATA[#[%dw 2.0
+output application/json
+var flat = flatten(vars.envir.data)
+---
+{
+	environmentId: payload,
+	organizationId: flat.organizationId[vars.counterE-1]
+}]]]></http:uri-params>
+            </http:request>
+            <ee:transform doc:name="Transform Message" doc:id="45b68e45-3ff4-4c52-857f-cfa4371d8c7d">
+              <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+              </ee:message>
+              <ee:variables>
+                <ee:set-variable variableName="acc_assets"><![CDATA[%dw 2.0
+output application/json
+---
+vars.acc_assets + payload]]></ee:set-variable>
+                <ee:set-variable variableName="assets"><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+              </ee:variables>
+            </ee:transform>
+            <try doc:name="Try" doc:id="18d7c179-242e-4b94-afdc-cf45d3c53e4b">
+              <parallel-foreach doc:name="Parallel For Each Contract" doc:id="5482bbb6-5ae2-4e43-b5ff-4be0e4552e91" collection="#[%dw 2.0&#10;output application/json&#10;var flatAsset = flatten(vars.assets.assets)&#10;var flatApi = flatten(flatAsset.apis)&#10;---&#10;flatApi.id]">
+              <http:request method="GET" doc:name="Request Contracts" doc:id="9cfcae62-6311-4622-a07f-2ec960766572" config-ref="HTTP_Request_configuration" path="/apimanager/api/v1/organizations/{organizationId}/environments/{environmentId}/apis/{environmentApiId}/contracts" targetValue="payload">
+                  <http:headers><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	Authorization: "bearer " ++ vars.token as String
+}]]]></http:headers>
+                  <http:uri-params><![CDATA[#[%dw 2.0
+output application/json
+var flat = flatten(vars.envir.data)
+---
+{
+	environmentId: flat.id[vars.counterA-1],
+	organizationId: flat.organizationId[vars.counterA-1],
+	environmentApiId: payload
+}]]]></http:uri-params>
+                </http:request>
+            </parallel-foreach>
+              <set-variable value="#[%dw 2.0&#10;output application/json&#10;var hold = flatten(payload)&#10;---&#10;vars.acc_contracts +&#10;{&#10;	data: hold,&#10;	EnvironmentId: vars.curr_envir_id&#10;}]" doc:name="Set Contracts" doc:id="45aaac49-b677-4a03-8904-c50d5ed8b554" variableName="acc_contracts" />
+              <error-handler>
+                <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="b7a77de2-20b4-4f79-8b62-20ee5e569dff" type="MULE:EXPRESSION">
+                  <logger level="INFO" doc:name="Logger" doc:id="581d955d-3a64-49f2-86a0-6d2d0cea585f" />
+                </on-error-continue>
+                <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="555035e9-b535-4bb6-974e-735bf49681ec">
+                  <logger level="INFO" doc:name="Logger" doc:id="190d4aaa-dced-4738-9adb-3e30df9bcb7a" message="#[payload]"/>
+                </on-error-continue>
+              </error-handler>
+            </try>
+        </foreach>
+          <error-handler>
+            <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f18897ae-df67-4e2d-93a4-a91ff67aea6e">
+                <set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;vars.errorA + {assets: {&#10;			error_desc: error.description as String,&#10;			environmentId: payload as String}}]" doc:name="errorA ERROR MESSAGE" doc:id="916d5993-58e6-455d-9341-4fee049e9555" variableName="errorA" />
+              </on-error-continue>
+          </error-handler>
+        </try>
+    </foreach>
+      <error-handler >
+        <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e03aecc4-f430-4d36-960f-eb5f3054aa13">
+            <set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;vars.errorE + {data: {&#10;			error_desc: error.description as String,&#10;			orgId: payload as String}}]" doc:name="errorE ERROR MESSAGE" doc:id="f8b8d299-5abf-4ae5-b599-ff60c777a911" variableName="errorE" />
+          </on-error-continue>
+      </error-handler>
+    </try>
+    <logger level="INFO" doc:name="Logger" doc:id="fc48f8d5-ca15-4444-befa-e39d3298d038" />
+  </flow>
+  <sub-flow name="retrive-analytics-Flow" doc:id="90e95544-8e52-42e9-8c51-5cc4f1af21df" >
+		<flow-ref doc:name="Flow Reference" doc:id="f9b7a8ba-3705-4070-af9e-9a854fb3fc7d" name="api-call-analytics-query-flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="0d549dc2-abbd-40e5-8351-c8d433bb3abb" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="requestsCount" ><![CDATA[%dw 2.0
+output application/java
+---
+sum((payload.response..client_id) flatMap (item,indexOfItem) -> item..count) default 0]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+  <sub-flow name="retrive-historical-reuse-metric-data-Flow" doc:id="81f26694-63f7-46a5-af72-2c9bae95a8de" >
 		<os:retrieve doc:name="Retrieve" doc:id="a51c7700-0800-4b99-ad0b-a9719ff79607" key="#[vars.environmentId]" objectStore="Reuse_MetricObject_store" target="historicalData">
 					<os:default-value><![CDATA[#[output application/json
 ---
 {
   "TotalApis": 0,
   "TotalContracts": 0,
-  "UniqueContracts": 0
+  "UniqueContracts": 0,
+  "RequestsPerContract": 0
 }]]]></os:default-value>
 				</os:retrieve>
 	</sub-flow>

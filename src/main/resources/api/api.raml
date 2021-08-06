@@ -46,6 +46,12 @@ securitySchemes:
             Receives the connected app client secret when login to Anypoint Platform.
           type: string
           required: true
+/environmentApis:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
 /apireuse-metrics:
   get:
     responses:
