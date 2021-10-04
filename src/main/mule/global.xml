@@ -27,4 +27,9 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 	</http:request-config>
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="24678c25-10fb-4f47-941f-d16a779997c5" file="properties/secure/app-${mule.env}.yaml" key="${mule.key}"/>
 	<global-property doc:name="Global Property" doc:id="27925b96-0977-4ea5-b09e-e417f88b98d0" name="mule.key" value="thisshouldbeakey" />
+      <os:config name="ReuseMetrisObjectStore_Config" doc:name="ObjectStore Config" doc:id="515f7948-55e4-493b-825b-33f337f0eb6b" >
+    <os:connection />
+  </os:config>
+  <os:object-store name="Reuse_MetricObject_store" doc:name="Object store" doc:id="9b621fcd-53f1-4f98-a5b0-6ccda456215c" config-ref="ReuseMetrisObjectStore_Config" />
+    
 </mule>

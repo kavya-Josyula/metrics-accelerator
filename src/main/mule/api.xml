@@ -129,7 +129,6 @@ output application/java
             </on-error-propagate>
         </error-handler>
     </flow>
-    </flow>
         <flow name="get:\apireuse-metrics:api-config">
         <logger level="INFO" message="get:\apireuse-metrics:api-config" />
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="d97c2a60-09ce-4bc9-b6ed-a5ee0e68d867" name="common-set-auth-vars-from-headers" />
