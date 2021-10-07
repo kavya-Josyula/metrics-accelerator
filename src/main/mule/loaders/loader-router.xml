@@ -154,4 +154,89 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			</otherwise>
 		</choice>
 	</flow>
+	<flow name="loader-reuse-router-flow" doc:id="733f41d5-1e87-4273-8481-858365ecf5b9" >
+		<logger level="INFO" doc:name="Logger" doc:id="8fa7c140-1442-4f74-b659-1400607e08ed" message="Strategy: #[vars.loaderDetails.strategy]" />
+		<choice doc:name="Choice" doc:id="9667900e-8065-420a-b710-952230d01c9b" >
+			<when expression="#[vars.loaderDetails.strategy == 'am']" >
+				<logger level="WARN" doc:name="Logger" doc:id="76fcfb7e-1270-4cf5-8d6a-3b13312342c9" message="AM Loader for SDLC not implemented"/>
+				<ee:transform doc:name="Response" doc:id="01efe90a-2d5d-4041-8824-4414bd4dcd96" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.loaderDetails.strategy == 'splunk']" >
+				<logger level="WARN" doc:name="Logger" doc:id="b98726eb-7391-436b-a2ac-c86c699034e8" message="Splunk Loader for SDLC not implemented"/>
+				<flow-ref doc:name="loader-splunk-main-flow" doc:id="2822ac31-2f66-48a2-961d-bccca59172b9" name="loader-splunk-hec-main-flow" />
+			</when>
+			<when expression="#[vars.loaderDetails.strategy == 'tableau']" >
+				<logger level="WARN" doc:name="Logger" doc:id="4c011f19-dbaf-4c23-9aef-5015c2cdf14e" message="Tableau Loader for SDLC not implemented"/>
+				<ee:transform doc:name="Response" doc:id="4820ae8f-1cdf-4eb7-9692-f1a41a051bff" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.loaderDetails.strategy == 'csv']">
+				<logger level="WARN" doc:name="Logger" doc:id="ca62ce4c-d4a6-4029-acfd-f4e0de564712" message="CSV Loader for SDLC not implemented"/>
+				<ee:transform doc:name="Response" doc:id="bc3c6613-a98f-4565-aa9a-dfcbbf044b77" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.loaderDetails.strategy == 'json']">
+				<logger level="WARN" doc:name="Logger" doc:id="7f1ebc4b-7ad6-465d-a041-d9b8a33cf1ae" message="JSON Loader for SDLC not implemented"/>
+				<ee:transform doc:name="Response" doc:id="11b074ec-3bc5-4f75-9788-c1bac5bbfa85" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.loaderDetails.strategy == 'elk']">
+				<logger level="WARN" doc:name="Logger" doc:id="333c1663-2d40-45e5-b50d-99f03b174d31" message="ELK Loader for SDLC not implemented"/>
+				<ee:transform doc:name="Response" doc:id="57e566ff-d48f-4714-9595-2bd30d3e6672" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>		
+			<when expression="#[vars.loaderDetails.strategy == 'mongodb']">
+				<logger level="WARN" doc:name="Logger" doc:id="5fe49f22-9b3e-4d24-a7aa-a0c8d2bb6405" message="MongoDB Loader for SDLC not implemented"/>
+				<ee:transform doc:name="Response" doc:id="d3efa1da-bbce-4176-916c-5c63582af16f" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</when>		
+			<otherwise >
+				<ee:transform doc:name="Response" doc:id="df31e523-77d4-4f3f-b797-0a172dc7f785" >
+					<ee:message >
+						<ee:set-payload resource="dw/sdlc/post-sdlc-metrics-not-implemented.dwl" />
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
 </mule>

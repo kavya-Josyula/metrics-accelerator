@@ -137,6 +137,8 @@ output application/java
     </flow>
     <flow name="post:\apireuse-metrics\load:application\json:api-config">
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="e514bd7d-bdbc-4492-844c-b9d4549155f9" name="common-set-auth-vars-from-headers" />
+		<flow-ref doc:name="Set Loader Details From Payload Flow Reference" doc:id="b52d97b5-b21c-4bb5-bfd7-2911009a784a" name="common-set-loader-vars-from-payload" />
+		<flow-ref doc:name="Loader Flow Reference" doc:id="f2e5b26f-5440-4492-8fc7-2e35e54eb5db" name="loader-router-flow" />
     </flow>
     <flow name="get:\platform-metrics:api-config">
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="a99d508d-5bd1-4627-88d1-fec6fb4ed7cf" name="common-set-auth-vars-from-headers" />

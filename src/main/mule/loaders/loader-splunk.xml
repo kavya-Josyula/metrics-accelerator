@@ -46,6 +46,13 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 		<set-variable value="#[vars.loaderDetails.splunk.platformBenefitsIndex]" doc:name="Set Index Variable" doc:id="0c492689-5104-4053-aca1-5468d84dcedd" variableName="index"/>
 		<flow-ref doc:name="Splunk HEC Flow Reference" doc:id="908850aa-3c8e-4ddf-8d83-c22f7399913b" name="splunk-hec-loader-flow" />
 	</flow>
+	<flow name="loader-reuse-splunk-hec-main-flow" doc:id="ab23d1d5-2cbc-48c0-ac3c-3fd298259db5">
+		<flow-ref doc:name="Aggregator Reuse Metrics Flow" doc:id="4dfbd24f-9723-425d-9e5f-f6cff469dcb7" name="reuseMetrics-flow" />
+		<logger level="DEBUG" doc:name="Logger" doc:id="b08e7f89-9ebe-4327-944a-8da9d7440e33" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="Set Event Variable" doc:id="895cb99d-0946-460e-a472-da8b09cbc50e" variableName="event" />
+		<set-variable value="#[vars.loaderDetails.splunk.platformBenefitsIndex]" doc:name="Set Index Variable" doc:id="a7e6caaf-ac4a-42d9-bf97-566999cbde42" variableName="index"/>
+		<flow-ref doc:name="Splunk HEC Flow Reference" doc:id="298e56ca-f788-4f17-95ab-fdd8b182f90a" name="splunk-hec-loader-flow" />
+	</flow>
 
 	<flow name="splunk-hec-loader-flow" doc:id="8f05b352-bfee-4162-997b-08b922501590">
 		<ee:transform doc:name="Build Splunk HEC Request" doc:id="8884d8cc-4705-4fcf-b6b1-b9fd837536ba">
@@ -53,6 +60,7 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 				<ee:set-payload resource="dw/loader/loader-splunk-hec-request.dwl" />
 			</ee:message>
 		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="79af1fca-dce0-4f0a-a708-c76c035628ea" message="#[payload]"/>
 		<choice doc:name="Choice" doc:id="f39b9d61-8883-419a-8fca-2f94d8f351d1">
 			<when expression='#[vars.loaderDetails.splunk.protocol == "HTTPS"]'>
 				<http:request method="POST" doc:name="Splunk HTTPS Request" doc:id="1a59e005-7fd4-428a-9154-2a47a0cc072a" config-ref="HTTPS_Splunk_Request_configuration" path="/services/collector/event">
