@@ -22,6 +22,7 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
     </ee:transform>
   </flow>
   <flow name="reuseMetrics-flow" doc:id="30b87a93-1bab-431a-939d-60c013261442" >
+    <flow-ref doc:name="Core Platform Login Flow" doc:id="2e0a7e9b-4fea-41f7-b8c4-77ac1f717535" name="core-platform-Login-flow"/>
     <ee:transform doc:name="Initialize Business Groups List" doc:id="9c54892f-49e0-4a97-adea-efce062fb7cd">
 			<ee:message />
 			<ee:variables>

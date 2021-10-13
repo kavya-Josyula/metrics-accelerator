@@ -170,7 +170,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			</when>
 			<when expression="#[vars.loaderDetails.strategy == 'splunk']" >
 				<logger level="WARN" doc:name="Logger" doc:id="b98726eb-7391-436b-a2ac-c86c699034e8" message="Splunk Loader for SDLC not implemented"/>
-				<flow-ref doc:name="loader-splunk-main-flow" doc:id="2822ac31-2f66-48a2-961d-bccca59172b9" name="loader-splunk-hec-main-flow" />
+				<flow-ref doc:name="loader Reuse Splunk hec main Flow" doc:id="2822ac31-2f66-48a2-961d-bccca59172b9" name="loader-reuse-splunk-hec-main-flow" />
 			</when>
 			<when expression="#[vars.loaderDetails.strategy == 'tableau']" >
 				<logger level="WARN" doc:name="Logger" doc:id="4c011f19-dbaf-4c23-9aef-5015c2cdf14e" message="Tableau Loader for SDLC not implemented"/>
