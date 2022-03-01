@@ -129,7 +129,7 @@ output application/java
             </on-error-propagate>
         </error-handler>
     </flow>
-        <flow name="get:\apireuse-metrics:api-config">
+    <flow name="get:\apireuse-metrics:api-config">
         <logger level="INFO" message="get:\apireuse-metrics:api-config" />
         <flow-ref doc:name="Set Auth Vars from Headers Flow Reference" doc:id="d97c2a60-09ce-4bc9-b6ed-a5ee0e68d867" name="common-set-auth-vars-from-headers" />
         <flow-ref doc:name="Aggregator Reuse Metrics Flow" doc:id="49dc8388-c52e-4a20-8c2c-b1fee8f5ec00" name="reuseMetrics-flow"/>

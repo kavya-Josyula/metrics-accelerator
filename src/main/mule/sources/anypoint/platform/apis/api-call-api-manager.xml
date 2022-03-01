@@ -129,11 +129,10 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<logger level="DEBUG" doc:name="Logger" doc:id="8bea20cb-7931-4eab-a8d2-fc8ab94ec08c"
 			message='#["API Manager - Automated Policies, Response Status Code:" ++ attributes.statusCode]' />
 	</flow>
-  
-  <flow name="api-call-api-manager-contracts-flow" doc:id="3235f6c4-bf85-47a1-b0f4-add0ae48bf62" >
-    <logger level="DEBUG" doc:name="Logger" doc:id="ada2a892-5dfd-4149-905e-a2a268f789c7" message="Calling API Manager - Unique Contracts" />
-    <http:request method="GET" doc:name="Contracts Request" doc:id="8ac5d3f4-ec62-469c-8160-0c58e3723947" config-ref="HTTP_Request_configuration" path="${anypoint.platform.apis.apiManager.contracts.path}">
-      <http:headers><![CDATA[#[output application/java
+  	<flow name="api-call-api-manager-contracts-flow" doc:id="3235f6c4-bf85-47a1-b0f4-add0ae48bf62" >
+    	<logger level="DEBUG" doc:name="Logger" doc:id="ada2a892-5dfd-4149-905e-a2a268f789c7" message="Calling API Manager - Unique Contracts" />
+    	<http:request method="GET" doc:name="Contracts Request" doc:id="8ac5d3f4-ec62-469c-8160-0c58e3723947" config-ref="HTTP_Request_configuration" path="${anypoint.platform.apis.apiManager.contracts.path}">
+      	<http:headers><![CDATA[#[output application/java
 ---
 {
   "Authorization" : "Bearer " ++ vars.token
@@ -150,7 +149,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 {
   "environmentId" : vars.environmentId
 }]]]></http:query-params>
-    </http:request>
-    <logger level="DEBUG" doc:name="Logger" doc:id="c499eb9b-4630-4fb0-8b5d-9b6b3e9f4db0" message='#["API Manager - Unique Contracts, Response Status Code:" ++ attributes.statusCode]' />
-  </flow>
+    	</http:request>
+    	<logger level="DEBUG" doc:name="Logger" doc:id="c499eb9b-4630-4fb0-8b5d-9b6b3e9f4db0" message='#["API Manager - Unique Contracts, Response Status Code:" ++ attributes.statusCode]' />
+  	</flow>
 </mule>
