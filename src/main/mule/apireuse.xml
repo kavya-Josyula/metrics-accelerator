@@ -119,7 +119,7 @@ vars.bgList ++
       "BusinessGroup": vars.orgName,
       "OrgID": vars.orgId,
       "Date": now(),
-      "Period": "CYQ" ++ (now() as String {format: "qqq"}),
+      "Period": "CY" ++ now() as String { format: "yy"} ++ "Q" ++(now() as String {format: "qqq"}),
       "Error": vars.envError
 } ++ envList]
 
