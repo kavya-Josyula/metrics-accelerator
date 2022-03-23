@@ -1,0 +1,63 @@
+<form>
+  <label>Anypoint quality Metrics</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1">
+      <label>Time Period</label>
+      <default>
+        <earliest>-96h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="bgToken">
+      <label>BusinessGroup</label>
+      <choice value="Salesforce">Salesforce</choice>
+      <choice value="Services">Services</choice>
+      <default>Salesforce</default>
+      <initialValue>Salesforce</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Quality Metrics</title>
+      <chart>
+        <title>Defects Metrics</title>
+        <search>
+          <query>index="defect_metrics" |  search businessGroup IN ($bgToken$) 
+| eval Period=strptime(Period,"%Y-%m-%d") 
+|  chart  values(defectMetrics.newdefects) as newdefects, values(defectMetrics.defectclosed) as defectclosed, values(defectMetrics.avgdefectage) as avgdefectage,  values(defectMetrics.MTTR) as MTTR, values(defectMetrics.backlogDefects) as backlogDefects,  values(defectMetrics.DER) as DER,  values(defectMetrics.codeCoverage) as codeCoverage by Period 
+| eval Period=strftime(Period,"%B %Y")</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">MTTR</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="charting.fieldColors">{"DER":0xffcc00,"codeCoverage":0xb0575a}</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Quality Metrics</title>
+      <chart>
+        <title>Defects Metrics</title>
+        <search>
+          <query>index="quality" |  search businessGroup IN ($bgToken$) 
+| eval Period=strptime(Period,"%Y-%m-%d") 
+|  chart  values(defectMetrics.newdefects) as newdefects, values(defectMetrics.defectclosed) as defectclosed, values(defectMetrics.avgdefectage) as avgdefectage,  values(defectMetrics.MTTR) as Mean-Time-to-resolve, values(defectMetrics.backlogDefects) as backlogDefects,  values(defectMetrics.DER) as Defect-Escape-Rate,  values(defectMetrics.codeCoverage) as codeCoverage by Period 
+| eval Period=strftime(Period,"%B %Y")</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">Mean-Time-to-resolve</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"DER":0xffcc00,"codeCoverage":0xb0575a}</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
