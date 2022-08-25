@@ -127,5 +127,3 @@ cache:
 #Comma separated list of API policy asset IDs which are security related, additional IDs can be added included custom policies  
 api:
   securityPolicies: "client-id-enforcement,ip-allowlist,ip-blocklist,jwt-validation,ldap-authentication,openidconnect-access-token-enforcement,external-oauth2-access-token-enforcement,http-basic-authentication" 
-    
-    
