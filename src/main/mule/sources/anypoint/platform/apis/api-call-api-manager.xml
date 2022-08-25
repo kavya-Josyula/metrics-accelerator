@@ -1,92 +1,155 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
 	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 
-	<http:request-config name="HTTP_Splunk_Request_configuration" doc:name="HTTP Request configuration" doc:id="8c04fe97-3fc0-496a-b707-0d6ce98e8248">
-		<http:request-connection host="#[vars.loaderDetails.splunk.host]" port="#[vars.loaderDetails.splunk.port]"
-			protocol="HTTP" />
-	</http:request-config>
-
-	<http:request-config name="HTTPS_Splunk_Request_configuration" doc:name="HTTP Request configuration" doc:id="ae305828-d97f-490b-adff-1b84b683f2ad">
-		<http:request-connection host="#[vars.loaderDetails.splunk.host]" port="#[vars.loaderDetails.splunk.port]"
-			protocol="HTTPS" >
-			<tls:context >
-				<tls:trust-store insecure="true" />
-			</tls:context>
-		</http:request-connection>
-	</http:request-config>
-
-	<flow name="loader-splunk-hec-main-flow" doc:id="ef10b993-2925-4b83-8b9b-83092f1e3c97">
-		<flow-ref doc:name="Aggregate Platform Metrics Flow Reference" doc:id="2a2d9ce7-a83a-4ebb-bfdf-cace7354c9a4" name="aggregator-platform-metrics-master-flow" />
-		<logger level="DEBUG" doc:name="Logger" doc:id="bc500a4d-66b9-457f-93df-f44c1066e18e" message="#[payload]" />
-		<set-variable value="#[payload]" doc:name="Set Event Variable" doc:id="91053473-3110-4f48-8441-75c33be16f66" variableName="event" />
-		<set-variable value="#[vars.loaderDetails.splunk.platformMetricsIndex]" doc:name="Set Index Variable" doc:id="241d25e2-51d7-4809-8ce8-ac7295f38648"
-			variableName="index" />
-		<flow-ref doc:name="Splunk HEC Flow Reference" doc:id="c315c6f3-2a75-487a-b587-7621034ef7ad" name="splunk-hec-loader-flow" />
-	</flow>
-
-	<flow name="loader-benefits-splunk-hec-main-flow" doc:id="ed5c9f13-fdf4-4b8b-87f0-c3dd48b522e7">
-		<flow-ref doc:name="Aggregate Platform Benefits Flow Reference" doc:id="83d65c5b-f5e6-40e1-b7df-f3a9df1d5f67" name="aggregator-platform-benefits-master-flow" />
-		<logger level="DEBUG" doc:name="Logger" doc:id="66bb2880-91ad-48f6-9105-3e5e25f5de7b" message="#[payload]" />
-		<set-variable value="#[payload]" doc:name="Set Event Variable" doc:id="d3bbb792-1f32-4e72-a1fd-711e061bae8f" variableName="event" />
-		<set-variable value="#[vars.loaderDetails.splunk.platformBenefitsIndex]" doc:name="Set Index Variable" doc:id="1eb05e64-23ae-45fd-8e0e-6bf9e8153fc1"
-			variableName="index" />
-		<flow-ref doc:name="Splunk HEC Flow Reference" doc:id="625cfc31-388f-4b74-8ab7-ec759ab9966b" name="splunk-hec-loader-flow" />
-	</flow>
-	
-	<flow name="loader-sdlc-splunk-hec-main-flow" doc:id="6a55ac3a-9666-4734-af8d-bf5077a89449">
-		<flow-ref doc:name="Aggregate SDLC Flow Reference" doc:id="b4a22370-8149-4a5d-bd99-a5d226d88b49" name="aggregator-sdlc-metrics-main-flow" />
-		<logger level="DEBUG" doc:name="Logger" doc:id="a1551ebb-2744-423a-a729-0fbc4b542f1b" message="#[payload]" />
-		<set-variable value="#[payload]" doc:name="Set Event Variable" doc:id="1efa7905-5dbf-4322-8ac7-e752e3f65128" variableName="event" />
-		<set-variable value="#[vars.loaderDetails.splunk.platformBenefitsIndex]" doc:name="Set Index Variable" doc:id="0c492689-5104-4053-aca1-5468d84dcedd" variableName="index"/>
-		<flow-ref doc:name="Splunk HEC Flow Reference" doc:id="908850aa-3c8e-4ddf-8d83-c22f7399913b" name="splunk-hec-loader-flow" />
-	</flow>
-	<flow name="loader-reuse-splunk-hec-main-flow" doc:id="ab23d1d5-2cbc-48c0-ac3c-3fd298259db5">
-		<flow-ref doc:name="Aggregator Reuse Metrics Flow" doc:id="4dfbd24f-9723-425d-9e5f-f6cff469dcb7" name="reuseMetrics-flow" />
-		<logger level="DEBUG" doc:name="Logger" doc:id="b08e7f89-9ebe-4327-944a-8da9d7440e33" message="#[payload]" />
-		<set-variable value="#[payload]" doc:name="Set Event Variable" doc:id="895cb99d-0946-460e-a472-da8b09cbc50e" variableName="event" />
-		<set-variable value="#[vars.loaderDetails.splunk.platformBenefitsIndex]" doc:name="Set Index Variable" doc:id="a7e6caaf-ac4a-42d9-bf97-566999cbde42" variableName="index"/>
-		<flow-ref doc:name="Splunk HEC Flow Reference" doc:id="298e56ca-f788-4f17-95ab-fdd8b182f90a" name="splunk-hec-loader-flow" />
-	</flow>
-
-	<flow name="splunk-hec-loader-flow" doc:id="8f05b352-bfee-4162-997b-08b922501590">
-		<ee:transform doc:name="Build Splunk HEC Request" doc:id="8884d8cc-4705-4fcf-b6b1-b9fd837536ba">
+	<flow name="api-call-api-manager-apis-flow" doc:id="cb45e4dc-7fd3-476d-aff3-7c0a30556088"
+		maxConcurrency="${anypoint.platform.apis.apiManager.maxConcurrency}">
+		<logger level="DEBUG" doc:name="Logger" doc:id="c04d063d-9f26-41c8-9f2c-efd64bc5a457" message="Calling API Manager - APIs" />
+		<ee:transform doc:name="offset" doc:id="c13c0763-5f72-41cb-9c03-c99cf11d9b2f">
 			<ee:message>
-				<ee:set-payload resource="dw/loader/loader-splunk-hec-request.dwl" />
 			</ee:message>
+			<ee:variables>
+				<ee:set-variable resource="dw/anypoint/save-offset-var.dwl" variableName="offset" />
+			</ee:variables>
 		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="79af1fca-dce0-4f0a-a708-c76c035628ea" message="#[payload]"/>
-		<choice doc:name="Choice" doc:id="f39b9d61-8883-419a-8fca-2f94d8f351d1">
-			<when expression='#[vars.loaderDetails.splunk.protocol == "HTTPS"]'>
-				<http:request method="POST" doc:name="Splunk HTTPS Request" doc:id="1a59e005-7fd4-428a-9154-2a47a0cc072a" config-ref="HTTPS_Splunk_Request_configuration" path="/services/collector/event">
-					<http:headers><![CDATA[#[output application/java
----
-{
-	"Authorization" : "Splunk " ++ vars.loaderDetails.splunk.token
-}]]]></http:headers>	
-				</http:request>
-			
-			</when>
-			<otherwise >
-				<http:request method="POST" doc:name="Splunk HTTP Request" doc:id="0a32071e-0d90-4748-bb18-8fc97d6c5213" config-ref="HTTP_Splunk_Request_configuration" path="/services/collector/event">
+		<http:request method="GET" doc:name="Get APIs Request" doc:id="ea3a4010-08c1-44e9-b9d4-a82201dbb162"
+			config-ref="HTTP_Request_configuration" path="${anypoint.platform.apis.apiManager.apis.path}">
 			<http:headers><![CDATA[#[output application/java
 ---
 {
-	"Authorization" : "Splunk " ++ vars.loaderDetails.splunk.token
+	"Authorization" : "Bearer " ++ vars.token
 }]]]></http:headers>
-			
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId,
+	"envId" : vars.environmentId
+}]]]></http:uri-params>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	offset : vars.offset
+}]]]></http:query-params>
 		</http:request>
+		<logger level="DEBUG" doc:name="Logger" doc:id="44625425-13b2-42b6-9886-1bbbe2de07fb" message='#["API Manager - APIs, Response Status Code:" ++ attributes.statusCode]' />
+		<flow-ref doc:name="Check if need to request more APIs" doc:id="17d7b3ae-ab10-4c81-b45b-adf7df4cb3ad" name="call-paginated-apis-if-required-subflow"/>
+	</flow>
+
+	<sub-flow name="call-paginated-apis-if-required-subflow" doc:id="87bf7e6a-54f1-4633-b6e4-b49585e64576">
+		<ee:transform doc:name="apisTotalObtained" doc:id="37cdff2e-37d7-479e-bfa1-89fed66fc6ae">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable resource="dw/anypoint/save-apis-obtained.dwl" variableName="apisTotalObtained" />
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Are there remaining apis?" doc:id="8d99249a-14bd-4c6a-b3fc-21f64f6f342b">
+			<when expression="#[vars.apisTotalObtained != payload.total]">
+				<ee:transform doc:name="aggregatedAPIPayload" doc:id="4b540c7a-f2c7-42de-bf41-fc384ab85f74">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable resource="dw/anypoint/save-aggregated-api-payload-var.dwl" variableName="aggregatedAPIPayload" />
+					</ee:variables>
+				</ee:transform>
+				<set-variable value="#[vars.offset + vars.apimOffset]" doc:name="offset" doc:id="556d0a3f-3cbe-42ee-b5aa-c5dad5f21e10"
+					variableName="offset" />
+				<flow-ref doc:name="Get more apis" doc:id="3431bd02-f793-45a2-92f6-9c4f63b83513" name="api-call-api-manager-apis-flow" />
+			</when>
+			<otherwise>
+				<logger level="DEBUG" doc:name="Log - No remaining APIs" doc:id="d1d3fd6e-9fb2-4f7e-bc66-e7283f0871de" message="No remaining APIs" />
+				<ee:transform doc:name="aggregatedAPIPayload as Payload" doc:id="eec48013-5edc-4835-b445-ed185176c573">
+					<ee:message>
+						<ee:set-payload resource="dw/anypoint/save-aggregated-api-payload-var.dwl" ></ee:set-payload>
+					</ee:message>
+				</ee:transform>
 			</otherwise>
 		</choice>
-		<ee:transform doc:name="Build Loader Response" doc:id="633990eb-d912-463d-8303-379e7e0f9da1" >
-			<ee:message >
-				<ee:set-payload resource="dw/loader/loader-success-response.dwl" />
-			</ee:message>
-		</ee:transform>
+	</sub-flow>
+
+	<flow name="api-call-api-manager-api-policies-flow" doc:id="392b0852-86a0-4067-bab6-7b5f55855136"
+		maxConcurrency="${anypoint.platform.apis.apiManager.maxConcurrency}">
+		<logger level="DEBUG" doc:name="Log - Call APIM " doc:id="19b1b41d-e3f3-40bf-a39d-2fbdfc8e2738"
+			message="Calling API Manager - API Policies" />
+		<until-successful maxRetries="${anypoint.platform.apis.apiManager.apiPolicies.retries.max}" doc:name="Until Successful"
+			doc:id="bb0f3611-9f0e-43bb-bbc9-efb617ca214e" millisBetweenRetries="${anypoint.platform.apis.apiManager.apiPolicies.retries.wait}">
+			<http:request method="GET" doc:name="Get API Policies Request" doc:id="d5c85809-9166-498c-babc-e74cd8a8a886"
+				config-ref="HTTP_Request_configuration" path="${anypoint.platform.apis.apiManager.apiPolicies.path}">
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token
+}]]]></http:headers>
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId,
+	"apiId" : vars.apiId,
+	"envId" : vars.environmentId
+}]]]></http:uri-params>
+				<http:query-params><![CDATA[#[output application/java
+---
+{
+	"includeProxyTemplate" : true,
+	"includeTlsContexts" : true,
+	"includeValidation" : true
+}]]]></http:query-params>
+			</http:request>
+		</until-successful>
+		<logger level="DEBUG" doc:name="Logger" doc:id="3099c073-7970-440a-8683-90ecfe96a6d5"
+			message='#["API Manager - API Policies, Response Status Code:" ++ attributes.statusCode]' />
 	</flow>
+	<flow name="api-call-api-manager-automated-policies-flow" doc:id="42654c28-a89d-4de6-88ba-dc0fb72281a8"
+		maxConcurrency="${anypoint.platform.apis.apiManager.maxConcurrency}">
+		<logger level="DEBUG" doc:name="Logger" doc:id="72a5e4e6-06fc-40d8-a9c8-b52535a58743"
+			message="Calling API Manager - Automated Policies" />
+		<http:request method="GET" doc:name="Get Automated Policies Request" doc:id="12594095-06f6-4b7a-af6d-5b3150abe1af"
+			config-ref="HTTP_Request_configuration" path="${anypoint.platform.apis.apiManager.automatedPolicies.path}">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId
+}]]]></http:uri-params>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"environmentId" : vars.environmentId
+}]]]></http:query-params>
+		</http:request>
+		<logger level="DEBUG" doc:name="Logger" doc:id="8bea20cb-7931-4eab-a8d2-fc8ab94ec08c"
+			message='#["API Manager - Automated Policies, Response Status Code:" ++ attributes.statusCode]' />
+	</flow>
+  	<flow name="api-call-api-manager-contracts-flow" doc:id="3235f6c4-bf85-47a1-b0f4-add0ae48bf62" >
+    	<logger level="DEBUG" doc:name="Logger" doc:id="ada2a892-5dfd-4149-905e-a2a268f789c7" message="Calling API Manager - Unique Contracts" />
+    	<http:request method="GET" doc:name="Contracts Request" doc:id="8ac5d3f4-ec62-469c-8160-0c58e3723947" config-ref="HTTP_Request_configuration" path="${anypoint.platform.apis.apiManager.contracts.path}">
+      	<http:headers><![CDATA[#[output application/java
+---
+{
+  "Authorization" : "Bearer " ++ vars.token
+}]]]></http:headers>
+      <http:uri-params><![CDATA[#[output application/java
+---
+{
+  "orgId" : vars.orgId,
+  "apiId" : vars.apiId,
+  "envId" : vars.environmentId
+}]]]></http:uri-params>
+      <http:query-params><![CDATA[#[output application/java
+---
+{
+  "environmentId" : vars.environmentId
+}]]]></http:query-params>
+    	</http:request>
+    	<logger level="DEBUG" doc:name="Logger" doc:id="c499eb9b-4630-4fb0-8b5d-9b6b3e9f4db0" message='#["API Manager - Unique Contracts, Response Status Code:" ++ attributes.statusCode]' />
+  	</flow>
 </mule>
