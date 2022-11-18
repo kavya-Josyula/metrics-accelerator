@@ -1,0 +1,145 @@
+<form>
+  <label>KPI Metrics</label>
+  <fieldset submitButton="false">
+    <input type="multiselect" searchWhenChanged="true" token="bgToken">
+      <label>Business Group</label>
+      <fieldForLabel>bg</fieldForLabel>
+      <fieldForValue>bg</fieldForValue>
+      <search>
+        <query>index=$platformBenefitsIndex$ | stats values(businessGroup) as bg by businessGroup</query>
+      </search>
+      <choice value="Salesforce">Salesforce</choice>
+      <default>Salesforce</default>
+      <initialValue>Salesforce</initialValue>
+      <delimiter>,</delimiter>
+      <valuePrefix>"</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+    </input>
+    <input type="time" token="timeToken">
+      <label>Time range</label>
+      <default>
+        <earliest>0</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="text" token="platformMetricsIndex" depends="$alwaysHide$">
+      <label>platform Metrics Index</label>
+      <default>cs_metrics</default>
+    </input>
+    <input type="text" token="platformBenefitsIndex" depends="$alwaysHide$">
+      <label>Reuse Benefits Index</label>
+      <default>benefits</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Re-use Metrics</title>
+      <chart>
+        <search>
+          <query>index="reuse" 
+| reverse  
+| search BusinessGroup IN ("Salesforce") 
+
+| delta CSA-sandbox.CurrentTotalApis p=1  AS DeltaTotalApis | eval  DeltaTotalApis = abs(DeltaTotalApis)
+| delta CSA-sandbox.CurrentUniqueContracts p=1 AS DeltaUniqueContracts | eval  DeltaUniqueContracts = abs(DeltaUniqueContracts)
+| delta CSA-sandbox.CurrentTotalContracts p=1 AS DeltaTotalContracts | eval  DeltaTotalContracts = abs(DeltaTotalContracts)
+| delta CSA-sandbox.CurrentAverageRequestsPerContract p=1 AS DeltaRequestsPerContract  | eval  DeltaRequestsPerContract = abs(DeltaRequestsPerContract) 
+| chart values(BusinessGroup) as "Business Group", values(CSA-sandbox.CurrentTotalApis) as "Total APIs",values(CSA-sandbox.CurrentTotalContracts) as "Total Contracts",values(CSA-sandbox.CurrentUniqueContracts) as "Unique Contracts", values(DeltaTotalApis) as "New APIs", values(DeltaUniqueContracts) as "New Unique Contracts", values(DeltaTotalContracts) as "New Total Contracts", values(CSA-sandbox.CurrentAverageRequestsPerContract) as "Avg Reqests", values(DeltaRequestsPerContract) as "New Requests" by  Period</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Period</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.text">APIs and Contracts</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.text">Test Coverage%</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.overlayFields">"New APIs","New Requests","New Total Contracts","New Unique Contracts"</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.fieldColors">{"Total APIs": 0x5B99BF, "Total Contracts": 0x9D6CC6 ,"Unique Contracts": 0xE3B024, "Avg Reqests":0xC6882F}</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisEnd</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="height">484</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">0</option>
+        <option name="trellis.size">large</option>
+        <option name="trellis.splitBy">BusinessGroup</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Quality Metrics</title>
+      <chart>
+        <search>
+          <query>index="quality" |  search businessGroup IN ($bgToken$) 
+| eval Period=strptime(Period,"%Y-%m-%d") 
+|  chart  values(defectMetrics.newdefects) as "New Defects", values(defectMetrics.defectclosed) as "Defects Closed", values(defectMetrics.avgdefectage) as "Avg Defect Age",  values(defectMetrics.MTTR) as "Mean Time To Resolve", values(defectMetrics.backlogDefects) as "Backlog Defects" by Period 
+| eval Period=strftime(Period,"%B %Y")</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.overlayFields">Mean-Time-to-resolve</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"DER":0xffcc00,"codeCoverage":0xb0575a}</option>
+        <option name="height">484</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Speed Metrics - SDLC</title>
+      <chart>
+        <search>
+          <query>index="speed" 
+| search businessGroup="Salesforce" 
+| chart values(period) as Period, values(speedMetrics.avgLeadTimeInDays) as "Avg Lead Time In Days", values(speedMetrics.velocityInPoints) as "Velocity In Points For Sprint" ,  values(speedMetrics.DER) as "Defect Escape Ratio", values(speedMetrics.codeCoverage) as "Code Coverage" by period</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="height">308</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Speed Metrics - No of deployments / Environment</title>
+      <chart>
+        <search>
+          <query>index="speed" 
+| search businessGroup="Salesforce" 
+| chart values(period) as Period, values(speedMetrics.prodDeploymentes) as "Prod Releases", values(speedMetrics.qaDeploymentes) as "QA Releases", values(speedMetrics.devDeploymentes) as "Dev Releases"  by period</query>
+          <earliest>@y</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="height">311</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+      </chart>
+    </panel>
+  </row>
+</form>
