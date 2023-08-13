@@ -125,7 +125,7 @@ var usableProdVcores = entitlements.vCoresProduction.assigned - entitlements.vCo
 	date: vars.date,
 	businessGroup: vars.orgName,
 	businessGroupId: vars.orgId,
-	coreServicesMetrics: {
+	coreServicesMetrics: if(members == null ) 0 else {
 		users: {
 			total: sizeOf(members.data default []),
 			activeMembers: sizeOf(members.data  filter ($.enabled == true) default []),
@@ -139,13 +139,13 @@ var usableProdVcores = entitlements.vCoresProduction.assigned - entitlements.vCo
 			sandbox: sizeOf(environments  filter (not $.isProduction) default []),
 		}
 	},
-	designCenterMetrics: {
+	designCenterMetrics:  if(designCenterProjects == [] ) 0 else {
 		total: if (designCenterProjects is Array) (sizeOf(designCenterProjects default [])) else (0),
 		apiSpecs: if (designCenterProjects is Array)  (sizeOf(designCenterProjects filter($."type" == "raml") default [])) else (0),
 		fragments: if (designCenterProjects is Array) (sizeOf(designCenterProjects filter($."type" == "raml-fragment") default [])) else (0),
 		flowDesignerApps: if  (designCenterProjects is Array) (sizeOf(designCenterProjects filter($."type" == "Mule_Application") default [])) else (0)
 	},
-	exchangeMetrics: {
+	exchangeMetrics: if(exchangeAssets == [] ) 0 else { 
             total: sizeOf(notGeneratedAssets),
 		    apiSpecs: countAssetType("rest-api"),
             fragments: countAssetType("raml-fragment"),
@@ -179,7 +179,7 @@ var usableProdVcores = entitlements.vCoresProduction.assigned - entitlements.vCo
             appliedPoliciesProd: avgSafe(policiesAppliedByPolicy(true))
         }
 	},
-	apiManagerMetrics: {
+	apiManagerMetrics: if(apiManagerApis == null and analyticsQueryResult == null ) 0 else {
 		clients: sizeOf(apiClients default []),
 		apis: {
 			production: {
@@ -272,7 +272,7 @@ var usableProdVcores = entitlements.vCoresProduction.assigned - entitlements.vCo
 			}
 		}	
 	},
-	runtimeManagerMetrics: {
+	runtimeManagerMetrics: if(armApps == null and armServers == null and armClusters == null and armServerGroups == null and rtf == [] ) 0 else {
 		cloudhub: {
 			networking: {
 				vpcsTotal: entitlements.vpcs.assigned,
@@ -498,7 +498,7 @@ var usableProdVcores = entitlements.vCoresProduction.assigned - entitlements.vCo
 			}
 		}
 	},
-	mqMetrics: {
+	mqMetrics:  if(mq == null ) 0 else {
 		stats: {
 			summary: {
 				production:{
@@ -573,7 +573,7 @@ var usableProdVcores = entitlements.vCoresProduction.assigned - entitlements.vCo
 			
 		},
 	},
-	osV2Metrics: {
+	osV2Metrics: if(osv2 == null ) 0 else {
 		stats: {
 			production: { 
 				requestCount: sum(flatten(getProdData(osv2)).objectStoreRequestCount default [0]),
