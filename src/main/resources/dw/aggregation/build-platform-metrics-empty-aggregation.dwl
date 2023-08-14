@@ -4,43 +4,44 @@ output application/json
 var environments = vars.environments
 var entitlements = vars.entitlements
 var errors = vars.errors
+var collectors = vars.collectors
 ---
 {
-	date: vars.date,
-	businessGroup: vars.orgName,
-	businessGroupId: vars.orgId,
-	coreServicesMetrics: {
-		users: {
-			total: 0,
-			activeMembers: 0,
-			inactiveMembers: 0,
-			activeMembersLast60Days: 0,  // defaulting to |2000-01-01T00:00:00.000Z| for null cases
-			activeMembersLast30Days: 0  // defaulting to |2000-01-01T00:00:00.000Z| for null cases
-		},
-		environments: {
-			total:  0,
-			production: 0,
-			sandbox: 0,
-		}
-	},
-	designCenterMetrics: {
-		total: 0,
-		apiSpecs: 0,
-		fragments: 0,
-		flowDesignerApps: 0
-	},
-	exchangeMetrics: {
+    date: vars.date,
+    businessGroup: vars.orgName, 
+    businessGroupId: vars.orgId,
+    coreServicesMetrics: if(collectors contains 'core') {
+        users: {
             total: 0,
-		    apiSpecs: 0,
+            activeMembers: 0,
+            inactiveMembers: 0,
+            activeMembersLast60Days: 0,  // defaulting to |2000-01-01T00:00:00.000Z| for null cases
+            activeMembersLast30Days: 0  // defaulting to |2000-01-01T00:00:00.000Z| for null cases
+        },
+        environments: {
+            total:  0,
+            production: 0,
+            sandbox: 0,
+        }
+    } else 0 ,
+    designCenterMetrics: if((collectors contains 'dc') or (collectors contains 'ap') or (collectors contains 'apc')) {
+        total: 0,
+        apiSpecs: 0,
+        fragments: 0,
+        flowDesignerApps: 0
+    } else 0,
+    exchangeMetrics: if(collectors contains 'ex' ) {
+            total: 0,
+            apiSpecs: 0,
             fragments: 0,
             proxies: 0,
             soapApis: 0,
             policies: 0,
-		    mule3Connectors: 0,
+            mule3Connectors: 0,
             extensions: 0,
             applications: 0,
-		    custom: 0,
-		    overallSatisfaction: 0,
+            custom: 0,
+            overallSatisfaction: 0,
         reuse: {
             // Avg of times a Fragment is imported by an API Spec
             fragments: 0,
@@ -59,167 +60,167 @@ var errors = vars.errors
             // Avg of times a Custom Policy is applied on API Manager (Production environments)
             appliedPoliciesProd: 0
         }
-	},
-	apiManagerMetrics: {
-		clients: 0,
-		apis: {
-			production: {
-				total: 0,
-				active: 0,
-				inactive: 0,
-				apiInstances: 0, 
-				apiVersions: 0,
-				apisWithPolicies: 0,
-				apisWithoutPolicies: 0 ,
-				apisWithSecurity:  0,
-				apisWithoutSecurity: 0, 
-				apisWithContracts: 0,
-				apisWithoutContracts: 0,
-				apisWithMoreThanOneConsumer: 0,
-				apisWithOneOrMoreConsumers: 0,
-				contracts: 0,
-				policiesUsed: [],
-				policiesUsedTotal: 0,
-				automatedPoliciesUsed: [],
-				automatedPoliciesUsedTotal: 0,
-				transactions: 0, //last x days on the period collected
-				details: []
-			},
-			sandbox: {
-				total: 0,
-				active: 0,
-				inactive: 0,
-				apiInstances: 0, 
-				apiVersions: 0,
-				apisWithPolicies: 0,
-				apisWithoutPolicies: 0 ,
-				apisWithSecurity:  0,
-				apisWithoutSecurity: 0, 
-				apisWithContracts: 0,
-				apisWithoutContracts: 0,
-				apisWithMoreThanOneConsumer: 0,
-				apisWithOneOrMoreConsumers: 0,
-				contracts: 0,
-				policiesUsed: [],
-				policiesUsedTotal: 0,
-				automatedPoliciesUsed: [],
-				automatedPoliciesUsedTotal: 0,
-				transactions: 0, //last x days on the period collected
-				details: []
-			}	
-		}	
-	},
-	runtimeManagerMetrics: {
-		cloudhub: {
-			networking: {
-				vpcsTotal: 0,
-				vpcsAvailable: 0,
-				vpcsUsed: 0,
-				vpnsTotal: 0,
-				vpnsAvailable: 0,
-				vpnsUsed: 0,
-				dlbsTotal: 0,
-				dlbsAvailable: 0,
-				dlbsUsed: 0,
-				staticIPsTotal: 0,
-				staticIPsAvailable: 0,
-				staticIPsUsed: 0
-			},
-			
-			applications:{
-				production: {
-					vcoresTotal: 0,
-					vcoresAvailable: 0,
-					vcoresUsed: 0,
-					applicationsTotal: 0,
-					applicationsStarted: 0,
-					applicationsStopped: 0,
-					runtimesUsed: [],
-					runtimesUsedTotal: 0,
-					details: []
-				},
-				sandbox:{
-					vcoresTotal: 0,
-					vcoresAvailable: 0,
-					vcoresUsed: 0,
-					applicationsTotal: 0,
-					applicationsStarted: 0,
-					applicationsStopped: 0,
-					runtimesUsed: [],
-					runtimesUsedTotal: 0,
-					details: []
-				}
-			}
-		},
-		rtf: {
-			capacity: {
-					fabrics: 0,
-    				workers: 0,
-    				controllers: 0,
-    				coresTotal: 0,
-   				    memoryTotal: 0,
-    				coresPerFabric:  0,
-    				memoryPerFabric: 0
-			},
-			applications: {
-				production: {
-					//coresAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
-					//coresUsed: sum((flatten(getProdDetails(armApps) default []).target.deploymentSettings.resources.cpu.limit  map (($ replace  "m" with "") as Number)) default [])/1000, //cores
-					coresUsed: 0,
-					coresReserved: 0,
-					//memoryAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
-					memoryUsed: 0, //Gigs
-					applicationsTotal: 0,
-					applicationsStarted: 0,
-					applicationsStopped: 0,
-					runtimesUsed: [],
-					runtimesUsedTotal: 0,
-					details: []
-					
-					
-				},
-				sandbox:{
-					//coresAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
-					//coresUsed: sum((flatten(getProdDetails(armApps) default []).target.deploymentSettings.resources.cpu.limit  map (($ replace  "m" with "") as Number)) default [])/1000, //cores
-					coresUsed: 0,
-					coresReserved: 0,
-					//memoryAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
-					memoryUsed: 0, //Gigs
-					applicationsTotal: 0,
-					applicationsStarted: 0,
-					applicationsStopped: 0,
-					runtimesUsed: [],
-					runtimesUsedTotal: 0,
-					details: []
-				}	
-			}
-		},
-		hybrid: {
-			production: {
-				servers: 0,
-				clusters: 0,
-				serverGroups: 0,
-				applicationsTotal: 0,
-				applicationsStarted: 0,
-				applicationsStopped: 0,
-				runtimesUsed: [],
-				runtimesUsedTotal: 0,
-				details: []
-			},
-			sandbox:{
-				servers: 0,
-				clusters: 0,
-				serverGroups: 0,
-				applicationsTotal: 0,
-				applicationsStarted: 0,
-				applicationsStopped: 0,
-				runtimesUsed: [],
-				runtimesUsedTotal: 0,
-				details: []
-			}
-		}	
-	},
-	"mqMetrics": {
+    } else  0,
+    apiManagerMetrics: if(collectors contains 'apm' ) {
+        clients: 0,
+        apis: {
+            production: {
+                total: 0,
+                active: 0,
+                inactive: 0,
+                apiInstances: 0, 
+                apiVersions: 0,
+                apisWithPolicies: 0,
+                apisWithoutPolicies: 0 ,
+                apisWithSecurity:  0,
+                apisWithoutSecurity: 0, 
+                apisWithContracts: 0,
+                apisWithoutContracts: 0,
+                apisWithMoreThanOneConsumer: 0,
+                apisWithOneOrMoreConsumers: 0,
+                contracts: 0,
+                policiesUsed: [],
+                policiesUsedTotal: 0,
+                automatedPoliciesUsed: [],
+                automatedPoliciesUsedTotal: 0,
+                transactions: 0, //last x days on the period collected
+                details: []
+            },
+            sandbox: {
+                total: 0,
+                active: 0,
+                inactive: 0,
+                apiInstances: 0, 
+                apiVersions: 0,
+                apisWithPolicies: 0,
+                apisWithoutPolicies: 0 ,
+                apisWithSecurity:  0,
+                apisWithoutSecurity: 0, 
+                apisWithContracts: 0,
+                apisWithoutContracts: 0,
+                apisWithMoreThanOneConsumer: 0,
+                apisWithOneOrMoreConsumers: 0,
+                contracts: 0,
+                policiesUsed: [],
+                policiesUsedTotal: 0,
+                automatedPoliciesUsed: [],
+                automatedPoliciesUsedTotal: 0,
+                transactions: 0, //last x days on the period collected
+                details: []
+            }   
+        }   
+    } else 0 ,
+    runtimeManagerMetrics: if((collectors contains 'arm') or (collectors contains 'rtf') or (collectors contains 'ch')) {
+        cloudhub: {
+            networking: {
+                vpcsTotal: 0,
+                vpcsAvailable: 0,
+                vpcsUsed: 0,
+                vpnsTotal: 0,
+                vpnsAvailable: 0,
+                vpnsUsed: 0,
+                dlbsTotal: 0,
+                dlbsAvailable: 0,
+                dlbsUsed: 0,
+                staticIPsTotal: 0,
+                staticIPsAvailable: 0,
+                staticIPsUsed: 0
+            },
+            
+            applications:{
+                production: {
+                    vcoresTotal: 0,
+                    vcoresAvailable: 0,
+                    vcoresUsed: 0,
+                    applicationsTotal: 0,
+                    applicationsStarted: 0,
+                    applicationsStopped: 0,
+                    runtimesUsed: [],
+                    runtimesUsedTotal: 0,
+                    details: []
+                },
+                sandbox:{
+                    vcoresTotal: 0,
+                    vcoresAvailable: 0,
+                    vcoresUsed: 0,
+                    applicationsTotal: 0,
+                    applicationsStarted: 0,
+                    applicationsStopped: 0,
+                    runtimesUsed: [],
+                    runtimesUsedTotal: 0,
+                    details: []
+                }
+            }
+        },
+        rtf: {
+            capacity: {
+                    fabrics: 0,
+                    workers: 0,
+                    controllers: 0,
+                    coresTotal: 0,
+                    memoryTotal: 0,
+                    coresPerFabric:  0,
+                    memoryPerFabric: 0
+            },
+            applications: {
+                production: {
+                    //coresAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
+                    //coresUsed: sum((flatten(getProdDetails(armApps) default []).target.deploymentSettings.resources.cpu.limit  map (($ replace  "m" with "") as Number)) default [])/1000, //cores
+                    coresUsed: 0,
+                    coresReserved: 0,
+                    //memoryAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
+                    memoryUsed: 0, //Gigs
+                    applicationsTotal: 0,
+                    applicationsStarted: 0,
+                    applicationsStopped: 0,
+                    runtimesUsed: [],
+                    runtimesUsedTotal: 0,
+                    details: []
+                    
+                    
+                },
+                sandbox:{
+                    //coresAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
+                    //coresUsed: sum((flatten(getProdDetails(armApps) default []).target.deploymentSettings.resources.cpu.limit  map (($ replace  "m" with "") as Number)) default [])/1000, //cores
+                    coresUsed: 0,
+                    coresReserved: 0,
+                    //memoryAvailable: "NA", // Not able to calculate because a fabric can be associated with multiple environments of any type
+                    memoryUsed: 0, //Gigs
+                    applicationsTotal: 0,
+                    applicationsStarted: 0,
+                    applicationsStopped: 0,
+                    runtimesUsed: [],
+                    runtimesUsedTotal: 0,
+                    details: []
+                }   
+            }
+        },
+        hybrid: {
+            production: {
+                servers: 0,
+                clusters: 0,
+                serverGroups: 0,
+                applicationsTotal: 0,
+                applicationsStarted: 0,
+                applicationsStopped: 0,
+                runtimesUsed: [],
+                runtimesUsedTotal: 0,
+                details: []
+            },
+            sandbox:{
+                servers: 0,
+                clusters: 0,
+                serverGroups: 0,
+                applicationsTotal: 0,
+                applicationsStarted: 0,
+                applicationsStopped: 0,
+                runtimesUsed: [],
+                runtimesUsedTotal: 0,
+                details: []
+            }
+        }   
+    } else   0,
+    "mqMetrics": if(collectors contains 'amq' ) {
         "stats": {
             "summary": {
                 "production": {
@@ -488,8 +489,8 @@ var errors = vars.errors
                 ]
             }
         }
-    },
-    "osV2Metrics": {
+    } else 0,
+    "osV2Metrics": if(collectors contains 'osv2' ) {
         "stats": {
             "production": {
                 "requestCount": 0,
@@ -500,6 +501,6 @@ var errors = vars.errors
                 "details": []
             }
         }
-    },
-	errors: errors	
+    } else 0,
+    errors: errors  
 }
